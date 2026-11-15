@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="四渡赤水交互战役沙盘：了解战役背景、双方部署、时间节点与红军的战略机动。"
+    />
+    <meta name="theme-color" content="#191b18" />
+    <title>四渡赤水｜战役沙盘</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header" aria-label="主导航">
+      <a class="wordmark" href="#top" aria-label="四渡赤水战役沙盘首页">
+        <span class="seal" aria-hidden="true">渡</span>
+        <span>四渡赤水</span>
+      </a>
+      <nav class="nav-links" aria-label="页面章节">
+        <a href="#situation">战役态势</a>
+        <a href="#logic">机动逻辑</a>
+        <a href="#chronicle">事件全览</a>
+      </nav>
+      <div class="header-meta"><span>1935</span><span>川 · 黔 · 滇</span></div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="grain" aria-hidden="true"></div>
+        <div class="hero-copy">
+          <p class="eyebrow"><span>交互战役沙盘</span><span>01.19 — 03.22</span></p>
+          <h1 id="hero-title"><span>四渡</span><span class="ink-red">赤水</span></h1>
+          <p class="hero-deck">在十倍兵力的合围中，以方向换时间，以机动造战机。</p>
+          <div class="hero-actions">
+            <button class="primary-action" id="play-tour" type="button">
+              <span class="play-icon" aria-hidden="true">▶</span>
+              <span>自动推演</span>
+            </button>
+            <a class="text-action" href="#situation">进入战役全景 <span>↘</span></a>
+          </div>
+        </div>
+
+        <div class="map-stage" aria-label="四渡赤水动态战役地图">
+          <div class="map-heading">
+            <div>
+              <span class="map-kicker">当前阶段</span>
+              <strong id="map-phase-name">一渡赤水</strong>
+            </div>
+            <span id="map-date">1935.01.28—29</span>
+          </div>
+
+          <svg class="battle-map" viewBox="0 0 880 720" role="img" aria-labelledby="map-title map-desc">
+            <title id="map-title">四渡赤水战役态势示意图</title>
+            <desc id="map-desc">示意红军四次往返赤水河以及国民党军围堵方向，路线按阶段动态切换。</desc>
+            <defs>
+              <filter id="roughen">
+                <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="8" result="noise" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" />
+              </filter>
+              <marker id="arrow-red" markerWidth="12" markerHeight="12" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L10,5 L0,10 z" fill="#c63b2f" />
+              </marker>
+              <marker id="arrow-dark" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L9,4 L0,8 z" fill="#292d29" />
+              </marker>
+              <pattern id="map-grid" width="38" height="38" patternUnits="userSpaceOnUse">
+                <path d="M 38 0 L 0 0 0 38" fill="none" stroke="#222720" stroke-opacity=".09" stroke-width="1" />
+              </pattern>
+            </defs>
+
+            <path class="province yunnan" d="M68 516 C160 453 222 461 296 501 C365 539 420 610 461 718 L48 718 Z" />
+            <path class="province sichuan" d="M70 28 L699 28 C693 135 655 192 599 228 C530 271 427 227 360 248 C275 275 239 333 167 325 C105 318 74 240 70 28 Z" />
+            <path class="province guizhou" d="M295 346 C389 290 511 284 644 318 C730 340 795 432 826 612 L463 718 C421 613 356 539 296 501 C255 475 250 399 295 346 Z" />
+            <path class="grid-fill" d="M70 28 L699 28 C693 135 655 192 599 228 C530 271 427 227 360 248 C275 275 239 333 167 325 C105 318 74 240 70 28 Z M295 346 C389 290 511 284 644 318 C730 340 795 432 826 612 L463 718 C421 613 356 539 296 501 C255 475 250 399 295 346 Z" />
+
+            <g class="province-labels" aria-hidden="true">
+              <text x="400" y="105">四川</text>
+              <text x="626" y="560">贵州</text>
+              <text x="183" y="629">云南</text>
+            </g>
+
+            <path class="river chishui" d="M352 110 C326 170 343 212 310 268 C283 314 316 359 287 411 C259 461 283 515 250 570" />
+            <path class="river wujiang" d="M351 581 C431 550 507 576 573 622 C635 665 711 655 780 630" />
+            <g class="river-labels" aria-hidden="true">
+              <text x="305" y="196" transform="rotate(-76 305 196)">赤水河</text>
+              <text x="542" y="604" transform="rotate(17 542 604)">乌江</text>
+            </g>
+
+            <g class="enemy-routes" aria-hidden="true">
+              <path id="enemy-north" d="M467 90 C430 150 418 205 408 260" marker-end="url(#arrow-dark)" />
+              <path id="enemy-east" d="M803 302 C717 322 657 340 597 375" marker-end="url(#arrow-dark)" />
+              <path id="enemy-south" d="M640 700 C625 620 611 559 581 515" marker-end="url(#arrow-dark)" />
+              <path id="enemy-west" d="M87 535 C150 509 202 484 251 447" marker-end="url(#arrow-dark)" />
+            </g>
+
+            <g class="routes" fill="none" aria-hidden="true">
+              <path class="route route-0" d="M545 392 C480 370 417 334 360 314 C324 302 303 296 282 285 C251 266 235 235 224 210" />
+              <path class="route route-1" d="M172 384 C228 401 284 393 340 370 C395 348 462 334 535 344 C575 350 590 375 570 410" />
+              <path class="route route-2" d="M555 423 C493 397 420 381 349 385 C310 387 287 366 288 331 C292 289 270 262 233 240" />
+              <path class="route route-3" d="M222 252 C266 275 303 307 324 344 C349 388 388 420 438 448 C471 467 479 505 469 552" />
+              <path class="route-future" d="M467 552 C508 602 580 623 646 642 C703 659 729 691 744 714" />
+            </g>
+
+            <g class="locations">
+              <g class="location" data-place="遵义" transform="translate(552 410)"><circle r="5" /><text x="11" y="-9">遵义</text></g>
+              <g class="location" data-place="桐梓" transform="translate(533 344)"><circle r="4" /><text x="10" y="-8">桐梓</text></g>
+              <g class="location" data-place="娄山关" transform="translate(555 372)"><circle r="4" /><text x="10" y="-8">娄山关</text></g>
+              <g class="location" data-place="土城" transform="translate(300 292)"><circle r="5" /><text x="10" y="-9">土城</text></g>
+              <g class="location" data-place="元厚" transform="translate(282 272)"><circle r="4" /><text x="10" y="-8">元厚</text></g>
+              <g class="location" data-place="太平渡" transform="translate(295 338)"><circle r="4" /><text x="-66" y="-7">太平渡</text></g>
+              <g class="location" data-place="二郎滩" transform="translate(306 361)"><circle r="4" /><text x="-67" y="17">二郎滩</text></g>
+              <g class="location" data-place="茅台" transform="translate(348 386)"><circle r="5" /><text x="10" y="-8">茅台</text></g>
+              <g class="location" data-place="古蔺" transform="translate(232 239)"><circle r="4" /><text x="-43" y="-9">古蔺</text></g>
+              <g class="location" data-place="叙永" transform="translate(185 188)"><circle r="4" /><text x="-43" y="-8">叙永</text></g>
+              <g class="location" data-place="扎西" transform="translate(172 384)"><circle r="4" /><text x="-42" y="-8">扎西</text></g>
+              <g class="location" data-place="贵阳" transform="translate(570 535)"><circle r="5" /><text x="11" y="-8">贵阳</text></g>
+              <g class="location" data-place="昆明" transform="translate(276 658)"><circle r="5" /><text x="11" y="-8">昆明</text></g>
+            </g>
+
+            <g id="red-force" class="force-marker" transform="translate(468 366)" aria-hidden="true">
+              <circle r="22" />
+              <path d="M0 -11 L3 -3 L12 -3 L5 2 L8 11 L0 6 L-8 11 L-5 2 L-12 -3 L-3 -3 Z" />
+              <text x="31" y="5">中央红军主力</text>
+            </g>
+          </svg>
+
+          <div class="map-legend" aria-label="地图图例">
+            <span><i class="legend-red"></i>红军机动</span>
+            <span><i class="legend-dark"></i>国民党军围堵</span>
+            <span><i class="legend-river"></i>河流</span>
+          </div>
+        </div>
+
+        <aside class="battle-brief" aria-live="polite">
+          <div class="brief-number"><span>阶段</span><strong id="brief-number">01</strong><span>/ 04</span></div>
+          <div class="brief-body">
+            <p id="brief-intent">原计划北渡长江；土城战斗后发现敌情有变，立即改向西渡赤水。</p>
+            <dl>
+              <div><dt>目的</dt><dd id="brief-goal">摆脱川军夹击</dd></div>
+              <div><dt>结果</dt><dd id="brief-result">由被动接战转入机动作战</dd></div>
+            </dl>
+          </div>
+        </aside>
+
+        <div class="phase-control" aria-label="战役阶段控制">
+          <div class="phase-progress"><span id="phase-progress-bar"></span></div>
+          <div class="phase-buttons" role="tablist" aria-label="四渡赤水阶段">
+            <button class="phase-button is-active" type="button" role="tab" aria-selected="true" data-phase="0"><span>01</span><strong>一渡</strong><small>摆脱被动</small></button>
+            <button class="phase-button" type="button" role="tab" aria-selected="false" data-phase="1"><span>02</span><strong>二渡</strong><small>避实击虚</small></button>
+            <button class="phase-button" type="button" role="tab" aria-selected="false" data-phase="2"><span>03</span><strong>三渡</strong><small>调敌西进</small></button>
+            <button class="phase-button" type="button" role="tab" aria-selected="false" data-phase="3"><span>04</span><strong>四渡</strong><small>跳出合围</small></button>
+          </div>
+        </div>
+      </section>
+
+      <section class="situation section" id="situation" aria-labelledby="situation-title">
+        <div class="section-index">01 / 战役态势</div>
+        <div class="section-heading">
+          <p class="eyebrow">遵义会议之后 · 1935年初</p>
+          <h2 id="situation-title">不是“计划好的四渡”，<br />而是不断读懂战场。</h2>
+          <p>湘江战役后，中央红军兵力锐减。蒋介石调集中央军及川、黔、滇等部，从多方向压缩红军活动空间。每一次转向，都来自敌情与地形的即时变化。</p>
+        </div>
+
+        <div class="force-comparison" aria-label="双方兵力对比">
+          <div class="force-line force-red">
+            <div class="force-label"><span>中央红军</span><strong>3万余</strong></div>
+            <div class="force-bar"><span style="--width: 8%"></span></div>
+            <p>红一、红三、红五、红九军团及军委纵队；兵力集中，但补给与重装备有限。</p>
+          </div>
+          <div class="force-line force-grey">
+            <div class="force-label"><span>国民党军围堵兵力</span><strong>约40万</strong></div>
+            <div class="force-bar"><span style="--width: 100%"></span></div>
+            <p>中央军与川、黔、滇等部构成多路围堵；数量占优，但隶属分散、协同与判断存在时差。</p>
+          </div>
+          <p class="data-note">注：约40万为各方向围堵兵力的总体规模，并非同时与红军正面接触。</p>
+        </div>
+
+        <div class="deployment-grid">
+          <article class="deployment red-deployment">
+            <header><span>红军部署</span><small>集中 · 轻装 · 快速</small></header>
+            <ul>
+              <li><b>红一军团</b><span>担任前卫与主力突击，控制关键通道。</span></li>
+              <li><b>红三军团</b><span>在娄山关、遵义等战斗中承担重要进攻任务。</span></li>
+              <li><b>红五、红九军团</b><span>警戒、掩护、牵制，保障主力机动空间。</span></li>
+              <li><b>军委纵队</b><span>中枢随主力行动，以电令保持高度集中的指挥。</span></li>
+            </ul>
+          </article>
+          <article class="deployment grey-deployment">
+            <header><span>国民党军部署</span><small>分区 · 堵截 · 合围</small></header>
+            <ul>
+              <li><b>北面 · 川军</b><span>封锁长江沿线与川南通道，阻止红军北渡。</span></li>
+              <li><b>东面 · 中央军、黔军</b><span>沿遵义及黔北推进，追击并压缩活动区域。</span></li>
+              <li><b>南面 · 滇军</b><span>由云南方向北上，参与滇黔边堵截。</span></li>
+              <li><b>总体企图</b><span>以优势兵力层层设防，将红军围歼于乌江西北。</span></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="logic section" id="logic" aria-labelledby="logic-title">
+        <div class="section-index">02 / 机动逻辑</div>
+        <div class="logic-intro">
+          <p class="eyebrow">为什么这样调动？</p>
+          <h2 id="logic-title">让对手追着“意图”走，<br />主力从缝隙中穿过。</h2>
+        </div>
+
+        <div class="logic-stage">
+          <div class="logic-rail" aria-hidden="true"><span></span></div>
+          <article class="logic-step">
+            <span class="logic-no">I</span>
+            <div><h3>先制造判断</h3><p>公开行动、佯攻和渡河方向，让对手相信红军将北渡长江或进攻某处。</p></div>
+            <strong>示形</strong>
+          </article>
+          <article class="logic-step">
+            <span class="logic-no">II</span>
+            <div><h3>再调动重兵</h3><p>敌军围绕预判方向重新部署；兵力越多，转向与协同越慢，原有防线随之出现间隙。</p></div>
+            <strong>调敌</strong>
+          </article>
+          <article class="logic-step">
+            <span class="logic-no">III</span>
+            <div><h3>最后突然折返</h3><p>主力以夜行、急行军和小部队牵制完成方向转换，抢在合围闭合之前通过。</p></div>
+            <strong>穿隙</strong>
+          </article>
+        </div>
+
+        <div class="decision-loop">
+          <div class="decision-copy">
+            <span class="eyebrow">决策循环</span>
+            <h3>情报不是结论，<br />而是下一次转向的起点。</h3>
+          </div>
+          <ol>
+            <li><span>01</span><b>观察敌情</b><small>识别围堵方向与薄弱部位</small></li>
+            <li><span>02</span><b>选择战机</b><small>避开主力，打击孤立之敌</small></li>
+            <li><span>03</span><b>快速转向</b><small>以行军速度重置战场关系</small></li>
+            <li><span>04</span><b>重新评估</b><small>不被原计划束缚，再次决策</small></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="chronicle section" id="chronicle" aria-labelledby="chronicle-title">
+        <div class="section-index">03 / 事件全览</div>
+        <div class="chronicle-head">
+          <div>
+            <p class="eyebrow">1935.01.19 — 03.22</p>
+            <h2 id="chronicle-title">64天，<br />四次改变方向。</h2>
+          </div>
+          <p>点击节点可将上方沙盘切换到对应阶段。日期与路线为战役级概括，渡河行动往往持续一至数日。</p>
+        </div>
+
+        <div class="timeline-list">
+          <button class="timeline-event" type="button" data-phase="0">
+            <time>01.19</time><span class="event-dot"></span>
+            <div><small>序幕</small><h3>离开遵义，向川黔边机动</h3><p>原拟由川南北渡长江，与红四方面军会合。</p></div>
+            <span class="event-tag">战略转移</span>
+          </button>
+          <button class="timeline-event" type="button" data-phase="0">
+            <time>01.28</time><span class="event-dot"></span>
+            <div><small>土城 · 青杠坡</small><h3>敌情超出预判，停止恋战</h3><p>川军实际兵力和增援情况改变，红军当夜决定撤出战斗。</p></div>
+            <span class="event-tag">临机决断</span>
+          </button>
+          <button class="timeline-event" type="button" data-phase="0">
+            <time>01.28—29</time><span class="event-dot"></span>
+            <div><small>一渡赤水</small><h3>从土城、元厚一带西渡</h3><p>主力进入川南，摆脱土城正面的不利态势。</p></div>
+            <span class="event-tag">摆脱被动</span>
+          </button>
+          <button class="timeline-event" type="button" data-phase="1">
+            <time>02.18—21</time><span class="event-dot"></span>
+            <div><small>二渡赤水</small><h3>由太平渡、二郎滩等地东渡</h3><p>趁黔北守备空虚回师，转向桐梓、娄山关、遵义。</p></div>
+            <span class="event-tag">避实击虚</span>
+          </button>
+          <button class="timeline-event" type="button" data-phase="1">
+            <time>02.25—28</time><span class="event-dot"></span>
+            <div><small>娄山关 · 遵义</small><h3>夺取关隘，再占遵义</h3><p>在运动中选择有利战场，取得长征以来一次重要胜利。</p></div>
+            <span class="event-tag">创造战机</span>
+          </button>
+          <button class="timeline-event" type="button" data-phase="2">
+            <time>03.16—17</time><span class="event-dot"></span>
+            <div><small>三渡赤水</small><h3>由茅台及附近西渡</h3><p>主力向古蔺、叙永方向行动，造成再次北渡长江的态势。</p></div>
+            <span class="event-tag">调敌西进</span>
+          </button>
+          <button class="timeline-event" type="button" data-phase="3">
+            <time>03.21—22</time><span class="event-dot"></span>
+            <div><small>四渡赤水</small><h3>秘密折返，再次东渡</h3><p>以一部继续向西佯动，主力从二郎滩、太平渡一带快速东渡。</p></div>
+            <span class="event-tag">跳出合围</span>
+          </button>
+          <div class="timeline-event timeline-outcome">
+            <time>03.31 → 05.09</time><span class="event-dot"></span>
+            <div><small>战役之后</small><h3>南渡乌江，佯攻贵阳，进军云南</h3><p>调动滇军东援后转入云南，最终巧渡金沙江，摆脱数十万敌军围追堵截。</p></div>
+            <span class="event-tag">打开新局</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing">
+        <div class="closing-mark" aria-hidden="true">变</div>
+        <blockquote>“打得赢就打，打不赢就走。”</blockquote>
+        <p>四渡赤水的关键，不是重复渡河本身，而是在不确定中持续夺回主动。</p>
+        <a href="#top">返回沙盘 <span>↑</span></a>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div><strong>四渡赤水 · 战役沙盘</strong><span>历史学习与战役分析专题</span></div>
+      <div class="sources">
+        <span>主要资料来源</span>
+        <a href="https://www.81.mil.cn/yljnt_208627/lsda_208656/16451606.html" target="_blank" rel="noreferrer">中国军网</a>
+        <a href="https://www.12371.cn/2021/10/21/ARTI1634810104798403.shtml" target="_blank" rel="noreferrer">共产党员网</a>
+        <a href="https://cpc.people.com.cn/n1/2022/0825/c443712-32510938.html" target="_blank" rel="noreferrer">中国共产党新闻网</a>
+      </div>
+      <p>地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括。</p>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

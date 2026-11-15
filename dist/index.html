@@ -18,12 +18,16 @@
         <span>四渡赤水</span>
       </a>
       <nav class="nav-links" aria-label="页面章节">
+        <a href="#command">指挥与番号</a>
         <a href="#situation">战役态势</a>
         <a href="#logic">机动逻辑</a>
         <a href="#chronicle">事件全览</a>
       </nav>
-      <div class="header-meta"><span>1935</span><span>川 · 黔 · 滇</span></div>
+      <button class="battle-switcher" id="battle-switcher" type="button" aria-label="选择战役">
+        <span>战役档案 01</span><strong>四渡赤水</strong><i>⌄</i>
+      </button>
     </header>
+    <div class="battle-menu" id="battle-menu" hidden aria-label="战役档案列表"></div>
 
     <main id="top">
       <section class="hero" aria-labelledby="hero-title">
@@ -102,6 +106,8 @@
               <path class="route-future" d="M467 552 C508 602 580 623 646 642 C703 659 729 691 744 714" />
             </g>
 
+            <g id="formation-layer" class="formation-layer" aria-label="当前阶段双方部队番号"></g>
+
             <g class="locations">
               <g class="location" data-place="遵义" transform="translate(552 410)"><circle r="5" /><text x="11" y="-9">遵义</text></g>
               <g class="location" data-place="桐梓" transform="translate(533 344)"><circle r="4" /><text x="10" y="-8">桐梓</text></g>
@@ -114,21 +120,30 @@
               <g class="location" data-place="古蔺" transform="translate(232 239)"><circle r="4" /><text x="-43" y="-9">古蔺</text></g>
               <g class="location" data-place="叙永" transform="translate(185 188)"><circle r="4" /><text x="-43" y="-8">叙永</text></g>
               <g class="location" data-place="扎西" transform="translate(172 384)"><circle r="4" /><text x="-42" y="-8">扎西</text></g>
+              <g class="location" data-place="石厢子" transform="translate(208 345)"><circle r="3" /><text x="-50" y="-9">石厢子</text></g>
+              <g class="location" data-place="水潦" transform="translate(252 318)"><circle r="3" /><text x="-37" y="17">水潦</text></g>
+              <g class="location" data-place="老鸦山" transform="translate(594 427)"><circle r="3" /><text x="10" y="15">老鸦山</text></g>
+              <g class="location" data-place="鲁班场" transform="translate(420 416)"><circle r="3" /><text x="10" y="-8">鲁班场</text></g>
+              <g class="location" data-place="苟坝" transform="translate(470 438)"><circle r="3" /><text x="10" y="16">苟坝</text></g>
+              <g class="location" data-place="临江场" transform="translate(400 458)"><circle r="3" /><text x="-53" y="17">临江场</text></g>
+              <g class="location" data-place="楠木坝" transform="translate(436 485)"><circle r="3" /><text x="10" y="-8">楠木坝</text></g>
+              <g class="location" data-place="花茂" transform="translate(473 514)"><circle r="3" /><text x="10" y="16">花茂</text></g>
+              <g class="location" data-place="乌江" transform="translate(424 592)"><circle r="4" /><text x="-38" y="18">乌江</text></g>
               <g class="location" data-place="贵阳" transform="translate(570 535)"><circle r="5" /><text x="11" y="-8">贵阳</text></g>
               <g class="location" data-place="昆明" transform="translate(276 658)"><circle r="5" /><text x="11" y="-8">昆明</text></g>
             </g>
 
-            <g id="red-force" class="force-marker" transform="translate(468 366)" aria-hidden="true">
-              <circle r="22" />
-              <path d="M0 -11 L3 -3 L12 -3 L5 2 L8 11 L0 6 L-8 11 L-5 2 L-12 -3 L-3 -3 Z" />
-              <text x="31" y="5">中央红军主力</text>
-            </g>
           </svg>
 
           <div class="map-legend" aria-label="地图图例">
             <span><i class="legend-red"></i>红军机动</span>
             <span><i class="legend-dark"></i>国民党军围堵</span>
             <span><i class="legend-river"></i>河流</span>
+          </div>
+          <div class="map-filters" role="group" aria-label="部队显示筛选">
+            <button class="is-active" type="button" data-force-filter="all">全部番号</button>
+            <button type="button" data-force-filter="red">红军</button>
+            <button type="button" data-force-filter="blue">国民党军</button>
           </div>
         </div>
 
@@ -154,8 +169,46 @@
         </div>
       </section>
 
+      <section class="command section" id="command" aria-labelledby="command-title">
+        <div class="section-index">01 / 指挥体系与战斗序列</div>
+        <div class="command-head">
+          <div>
+            <p class="eyebrow">WHO COMMANDS · WHO MOVES</p>
+            <h2 id="command-title">先看谁在指挥，<br />再看部队往哪里走。</h2>
+          </div>
+          <p>沙盘中的番号按阶段重新定位。点击上方“一渡—四渡”，或在本节切换阶段，可查看当时各部所处方向与任务。地图位置为战役态势示意。</p>
+        </div>
+
+        <div class="commanders">
+          <article class="commander-side red-commanders">
+            <header><span>中央红军</span><small>最高决策与指挥</small></header>
+            <div id="red-commanders"></div>
+          </article>
+          <article class="commander-side blue-commanders">
+            <header><span>国民党军</span><small>围堵体系</small></header>
+            <div id="blue-commanders"></div>
+          </article>
+        </div>
+
+        <div class="order-layout">
+          <div class="order-tabs" role="tablist" aria-label="战斗序列阵营">
+            <button class="is-active" type="button" role="tab" aria-selected="true" data-order-side="red">红军战斗序列</button>
+            <button type="button" role="tab" aria-selected="false" data-order-side="blue">国民党军战斗序列</button>
+          </div>
+          <div class="order-table" id="order-table" aria-live="polite"></div>
+        </div>
+
+        <div class="phase-dossier">
+          <header>
+            <div><span class="eyebrow">阶段行动记录</span><h3 id="dossier-title">一渡赤水</h3></div>
+            <div class="dossier-tabs" role="tablist" aria-label="阶段行动记录"></div>
+          </header>
+          <div class="dossier-list" id="dossier-list"></div>
+        </div>
+      </section>
+
       <section class="situation section" id="situation" aria-labelledby="situation-title">
-        <div class="section-index">01 / 战役态势</div>
+        <div class="section-index">02 / 战役态势</div>
         <div class="section-heading">
           <p class="eyebrow">遵义会议之后 · 1935年初</p>
           <h2 id="situation-title">不是“计划好的四渡”，<br />而是不断读懂战场。</h2>
@@ -199,7 +252,7 @@
       </section>
 
       <section class="logic section" id="logic" aria-labelledby="logic-title">
-        <div class="section-index">02 / 机动逻辑</div>
+        <div class="section-index">03 / 机动逻辑</div>
         <div class="logic-intro">
           <p class="eyebrow">为什么这样调动？</p>
           <h2 id="logic-title">让对手追着“意图”走，<br />主力从缝隙中穿过。</h2>
@@ -239,7 +292,7 @@
       </section>
 
       <section class="chronicle section" id="chronicle" aria-labelledby="chronicle-title">
-        <div class="section-index">03 / 事件全览</div>
+        <div class="section-index">04 / 事件全览</div>
         <div class="chronicle-head">
           <div>
             <p class="eyebrow">1935.01.19 — 03.22</p>
@@ -307,10 +360,11 @@
         <a href="https://www.81.mil.cn/yljnt_208627/lsda_208656/16451606.html" target="_blank" rel="noreferrer">中国军网</a>
         <a href="https://www.12371.cn/2021/10/21/ARTI1634810104798403.shtml" target="_blank" rel="noreferrer">共产党员网</a>
         <a href="https://cpc.people.com.cn/n1/2022/0825/c443712-32510938.html" target="_blank" rel="noreferrer">中国共产党新闻网</a>
+        <a href="https://www.bilibili.com/video/BV11RSYBtEu3/" target="_blank" rel="noreferrer">参考视频</a>
       </div>
       <p>地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括。</p>
     </footer>
 
-    <script src="./app.js"></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>

@@ -12,6 +12,10 @@ python3 -m http.server 43119 --directory dist
 
 然后访问 `http://127.0.0.1:43119`。
 
+## Vercel 部署
+
+仓库根目录的 `vercel.json` 已将静态输出目录声明为 `dist`。将仓库导入 Vercel 后无需填写构建命令；Vercel 会直接发布 `dist/index.html` 及其资源。
+
 ## 目录
 
 ```text

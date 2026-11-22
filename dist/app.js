@@ -1,248 +1,617 @@
-import { battleRegistry, loadBattle } from "./data/battles.js";
+// 战史沙盘 · 应用入口
+// 负责路由（档案馆 / 战役沙盘）、主题切换与各章节渲染；地图交互交由 MapRenderer。
 
-const requestedBattle = new URLSearchParams(window.location.search).get("battle") || "chishui-1935";
-const battle = await loadBattle(requestedBattle);
-const phases = battle.phases;
-const svgNamespace = "http://www.w3.org/2000/svg";
+import { battleRegistry, loadBattle, getBattleEntry } from "./data/battles.js?v=2";
+import { normalizeBattle } from "./engine/schema.js?v=2";
+import { MapRenderer } from "./engine/mapRenderer.js?v=2";
 
-const phaseButtons = [...document.querySelectorAll(".phase-button")];
-const routes = [...document.querySelectorAll(".routes path:not(.route-future)")];
-const places = [...document.querySelectorAll(".location")];
-const playButton = document.querySelector("#play-tour");
-const formationLayer = document.querySelector("#formation-layer");
-const battleMenu = document.querySelector("#battle-menu");
-let currentPhase = 0;
-let tourTimer = null;
-let forceFilter = "all";
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const pad = (n) => String(n).padStart(2, "0");
+const TOUR_INTERVAL = 4200;
 
-function makeSvg(tag, attributes = {}) {
-  const node = document.createElementNS(svgNamespace, tag);
-  Object.entries(attributes).forEach(([name, value]) => node.setAttribute(name, value));
-  return node;
-}
+const state = {
+  battleId: null,
+  battle: null,
+  phase: 0,
+  orderSide: "red",
+  eraFilter: "all",
+  tourTimer: null
+};
 
-function createFormationNodes() {
-  const formationIds = [...new Set(phases.flatMap((phase) => phase.formations.map((unit) => unit.id)))];
+let mapRenderer = null;
+let revealObserver = null;
 
-  formationIds.forEach((id) => {
-    const group = makeSvg("g", { id: `formation-${id}`, class: "formation" });
-    group.dataset.formationId = id;
-    group.append(
-      makeSvg("line", { class: "unit-line", x1: "0", y1: "0", x2: "16", y2: "-10" }),
-      makeSvg("circle", { class: "unit-pip", cx: "0", cy: "0", r: "4" }),
-      makeSvg("rect", { class: "unit-plate", x: "16", y: "-25", width: "132", height: "34" }),
-      makeSvg("text", { class: "unit-label", x: "24", y: "-11" }),
-      makeSvg("text", { class: "unit-sub", x: "24", y: "2" })
-    );
-    group.style.opacity = "0";
-    formationLayer.append(group);
+/* ---------------- 主题 ---------------- */
+
+const THEME_VARS = {
+  accent: "--accent",
+  accentBright: "--accent-bright",
+  accentDark: "--accent-dark",
+  accentSoft: "--accent-soft",
+  opposing: "--opposing",
+  opposingSoft: "--opposing-soft",
+  gold: "--gold",
+  riverKey: "--river-key",
+  stageBg: "--stage-bg",
+  stageBgAlt: "--stage-bg-alt",
+  stageGlow: "--stage-glow",
+  paper: "--paper",
+  paperLight: "--paper-light",
+  paperMuted: "--paper-muted",
+  ink: "--ink",
+  muted: "--muted",
+  closingBg: "--closing-bg"
+};
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  Object.entries(THEME_VARS).forEach(([key, cssVar]) => {
+    if (theme && theme[key]) root.style.setProperty(cssVar, theme[key]);
+    else root.style.removeProperty(cssVar);
   });
+  document.body.dataset.theme = theme?.id || "";
+  const metaTheme = $('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.setAttribute("content", theme?.stageBg || "#121512");
 }
 
-function updateFormations(phase) {
-  const active = new Map(phase.formations.map((unit) => [unit.id, unit]));
-
-  formationLayer.querySelectorAll(".formation").forEach((node) => {
-    const unit = active.get(node.dataset.formationId);
-    if (!unit) {
-      node.style.opacity = "0";
-      return;
-    }
-
-    node.style.opacity = "1";
-    node.setAttribute("transform", `translate(${unit.x} ${unit.y})`);
-    node.setAttribute("class", `formation ${unit.side}`);
-    node.querySelector(".unit-label").textContent = unit.label;
-    node.querySelector(".unit-sub").textContent = unit.sub;
-    node.classList.toggle("is-muted", forceFilter !== "all" && forceFilter !== unit.side);
-  });
-}
-
-function renderCommanders() {
-  const renderSide = (target, people) => {
-    target.innerHTML = people
-      .map((person) => `<div class="commander-row"><strong>${person.name}</strong><span>${person.role}</span></div>`)
-      .join("");
-  };
-  renderSide(document.querySelector("#red-commanders"), battle.commanders.red);
-  renderSide(document.querySelector("#blue-commanders"), battle.commanders.blue);
-}
-
-function renderOrder(side = "red") {
-  const target = document.querySelector("#order-table");
-  target.innerHTML = battle.orderOfBattle[side]
-    .map(([unit, commander, role]) => `<div class="order-row"><strong>${unit}</strong><b>${commander}</b><span>${role}</span></div>`)
-    .join("");
-
-  document.querySelectorAll("[data-order-side]").forEach((button) => {
-    const active = button.dataset.orderSide === side;
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-selected", String(active));
-  });
-}
-
-function renderDossier(index) {
-  const phase = phases[index];
-  document.querySelector("#dossier-title").textContent = `${phase.name} · ${phase.date}`;
-  document.querySelector("#dossier-list").innerHTML = phase.detail
-    .map(([date, title, copy]) => `<div class="dossier-row"><time>${date}</time><strong>${title}</strong><span>${copy}</span></div>`)
-    .join("");
-
-  document.querySelectorAll(".dossier-tabs button").forEach((button, buttonIndex) => {
-    const active = buttonIndex === index;
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-selected", String(active));
-  });
-}
+/* ---------------- 菜单与档案馆 ---------------- */
 
 function renderBattleMenu() {
-  battleMenu.innerHTML = `<header>战争沙盘档案库 · DATA-DRIVEN ARCHIVE</header>${battleRegistry
-    .map(
-      (item, index) => `<button class="battle-option ${item.status === "planned" ? "is-planned" : ""}" type="button" ${item.status === "planned" ? "disabled" : ""}>
-        <span>${String(index + 1).padStart(2, "0")}</span>
-        <strong>${item.name}</strong>
-        <small>${item.period}</small>
-      </button>`
-    )
-    .join("")}`;
+  const menu = $("#battle-menu");
+  menu.innerHTML = `
+    <header><span>战役档案 · ARCHIVES</span><a href="./" data-nav-home>档案馆总览</a></header>
+    <div class="battle-menu-list">
+      ${battleRegistry
+        .map((item, i) => {
+          const available = item.status === "available";
+          const current = item.id === state.battleId;
+          return `
+          <button class="battle-option ${current ? "is-current" : ""} ${available ? "" : "is-planned"}"
+                  type="button" role="menuitem" data-battle-id="${item.id}" ${available ? "" : "disabled"}
+                  style="--item-accent:${item.accent}">
+            <span class="option-seal">${item.seal}</span>
+            <span class="option-info">
+              <strong>${item.name}</strong>
+              <small>${item.periodLabel} · ${item.theater}</small>
+            </span>
+            <span class="option-badge">${current ? "当前" : available ? pad(i + 1) : "筹备中"}</span>
+          </button>`;
+        })
+        .join("")}
+    </div>`;
+
+  $$(".battle-option:not(.is-planned)", menu).forEach((btn) =>
+    btn.addEventListener("click", () => {
+      closeMenu();
+      navigate(btn.dataset.battleId);
+    })
+  );
+  bindHomeLinks(menu);
 }
 
-function setPhase(index, options = {}) {
-  currentPhase = Number(index);
-  const phase = phases[currentPhase];
+function renderArchive() {
+  const grid = $("#archive-grid");
+  const filtered =
+    state.eraFilter === "all"
+      ? battleRegistry
+      : battleRegistry.filter((b) => b.category === state.eraFilter);
 
-  document.querySelector("#map-phase-name").textContent = phase.name;
-  document.querySelector("#map-date").textContent = phase.date;
-  document.querySelector("#brief-number").textContent = String(currentPhase + 1).padStart(2, "0");
-  document.querySelector("#brief-intent").textContent = phase.intent;
-  document.querySelector("#brief-goal").textContent = phase.goal;
-  document.querySelector("#brief-result").textContent = phase.result;
-  document.querySelector("#phase-progress-bar").style.width = `${(currentPhase + 1) * 25}%`;
+  grid.innerHTML = filtered
+    .map((item) => {
+      const idx = battleRegistry.findIndex((b) => b.id === item.id);
+      const available = item.status === "available";
+      return `
+      <article class="archive-card ${available ? "" : "is-planned"}" style="--item-accent:${item.accent}">
+        <button type="button" class="archive-card-hit" data-battle-id="${item.id}" ${available ? "" : "disabled"}
+                aria-label="${available ? "进入" : "筹备中："}${item.name}沙盘"></button>
+        <div class="card-top">
+          <span class="card-no">档案 ${pad(idx + 1)}</span>
+          <span class="card-status">${available ? "可推演" : "筹备中"}</span>
+        </div>
+        <div class="card-seal" aria-hidden="true">${item.seal}</div>
+        <div class="card-body">
+          <small>${item.era}</small>
+          <h3>${item.name}</h3>
+          <p>${item.summary}</p>
+        </div>
+        <dl class="card-meta">
+          <div><dt>时间</dt><dd>${item.periodLabel}</dd></div>
+          <div><dt>战场</dt><dd>${item.theater}</dd></div>
+          <div><dt>对阵</dt><dd>${item.opponents}</dd></div>
+        </dl>
+        <div class="card-cta">${available ? "进入沙盘 →" : "敬请期待"}</div>
+      </article>`;
+    })
+    .join("");
 
-  phaseButtons.forEach((button, buttonIndex) => {
-    const active = buttonIndex === currentPhase;
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-selected", String(active));
+  $$(".archive-card-hit:not([disabled])", grid).forEach((btn) =>
+    btn.addEventListener("click", () => navigate(btn.dataset.battleId))
+  );
+
+  const available = battleRegistry.filter((b) => b.status === "available").length;
+  const planned = battleRegistry.length - available;
+  $("#home-stats").innerHTML = `
+    <div><strong>${pad(available)}</strong><span>可推演战役</span></div>
+    <div><strong>${pad(planned)}</strong><span>筹备中档案</span></div>
+    <div><strong>${battleRegistry.length ? `${Math.min(...battleRegistry.map((b) => +b.period))}—${Math.max(...battleRegistry.map((b) => +b.period))}` : "—"}</strong><span>时间跨度（年）</span></div>`;
+}
+
+function openMenu() {
+  $("#battle-menu").hidden = false;
+  $("#battle-switcher").setAttribute("aria-expanded", "true");
+}
+function closeMenu() {
+  $("#battle-menu").hidden = true;
+  $("#battle-switcher").setAttribute("aria-expanded", "false");
+}
+
+function bindHomeLinks(root = document) {
+  $$("[data-nav-home]", root).forEach((link) => {
+    if (link.dataset.bound) return;
+    link.dataset.bound = "1";
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeMenu();
+      navigate(null);
+    });
   });
+}
 
-  routes.forEach((route, routeIndex) => {
-    route.setAttribute("d", phases[routeIndex].route);
-    route.classList.toggle("is-active", routeIndex === currentPhase);
-  });
+/* ---------------- 路由 ---------------- */
 
-  places.forEach((place) => {
-    place.classList.toggle("is-key", phase.keys.includes(place.dataset.place));
-  });
+function navigate(battleId) {
+  const url = new URL(window.location.href);
+  url.hash = "";
+  if (battleId) url.searchParams.set("battle", battleId);
+  else url.searchParams.delete("battle");
+  window.history.pushState({ battle: battleId }, "", url.toString());
+  route({ scrollTop: true });
+}
 
-  updateFormations(phase);
-  renderDossier(currentPhase);
-
-  if (options.scrollToMap) {
-    document.querySelector("#top").scrollIntoView({ behavior: "smooth" });
+async function route(options = {}) {
+  const id = new URLSearchParams(window.location.search).get("battle");
+  const entry = id ? getBattleEntry(id) : null;
+  if (entry && entry.status === "available") {
+    await showBattle(id);
+  } else {
+    showHome();
   }
+  if (options.scrollTop) window.scrollTo(0, 0);
+}
+
+function showHome() {
+  stopTour();
+  state.battleId = null;
+  state.battle = null;
+  applyTheme(null);
+  document.body.dataset.view = "home";
+  $("#view-home").hidden = false;
+  $("#view-battle").hidden = true;
+  document.title = "战史沙盘｜中国历史著名战役交互推演";
+  $("#switcher-seal").textContent = "史";
+  $("#switcher-kicker").textContent = "战役档案";
+  $("#switcher-name").textContent = "选择战役";
+  $("#footer-title").textContent = "战史沙盘";
+  $("#footer-sources").innerHTML = "";
+  renderBattleMenu();
+  setupReveal();
+}
+
+async function showBattle(id) {
+  stopTour();
+  if (state.battleId === id && state.battle) {
+    document.body.dataset.view = "battle";
+    return;
+  }
+
+  document.body.classList.add("is-loading");
+  let battle;
+  try {
+    battle = normalizeBattle(await loadBattle(id));
+  } catch (err) {
+    console.error("加载战役失败:", err);
+    document.body.classList.remove("is-loading");
+    showHome();
+    return;
+  }
+
+  state.battleId = id;
+  state.battle = battle;
+  state.phase = 0;
+  state.orderSide = "red";
+
+  applyTheme(battle.theme);
+  document.body.dataset.view = "battle";
+  $("#view-home").hidden = true;
+  $("#view-battle").hidden = false;
+
+  document.title = `${battle.title}｜战史沙盘`;
+  $('meta[name="description"]')?.setAttribute(
+    "content",
+    `${battle.title}交互战役沙盘：${battle.subtitle}。按阶段推演双方部署、机动路线与制胜逻辑。`
+  );
+
+  const index = battleRegistry.findIndex((b) => b.id === id);
+  $("#switcher-seal").textContent = battle.seal;
+  $("#switcher-kicker").textContent = `战役档案 ${pad(index + 1)}`;
+  $("#switcher-name").textContent = battle.title;
+
+  renderHero(battle);
+  mapRenderer.renderBattle(battle);
+  $("#map-scale").textContent = battle.mapConfig.scaleNote || "";
+  renderPhaseControls(battle);
+  renderCommanders(battle);
+  renderOrder(battle);
+  renderSituation(battle);
+  renderLogic(battle);
+  renderChronicle(battle);
+  renderClosing(battle);
+  renderFooter(battle);
+  renderBattleMenu();
+
+  setPhase(0);
+  setupReveal();
+  requestAnimationFrame(() => document.body.classList.remove("is-loading"));
+}
+
+/* ---------------- 章节渲染 ---------------- */
+
+function renderHero(battle) {
+  const meta = battle.meta || {};
+  $("#hero-eyebrow").innerHTML = (meta.eyebrow || [battle.era, battle.period])
+    .map((t) => `<span>${t}</span>`)
+    .join("");
+  const [a, b] = meta.heroTitle || [battle.title, ""];
+  $("#hero-title").innerHTML = `<span>${a}</span><span class="accent">${b}</span>`;
+  $("#hero-deck").textContent = meta.deck || battle.subtitle || "";
+  $("#hero-facts").innerHTML = (meta.facts || [])
+    .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`)
+    .join("");
+}
+
+function renderPhaseControls(battle) {
+  const container = $(".phase-buttons");
+  container.style.setProperty("--phase-count", battle.phases.length);
+  container.innerHTML = battle.phases
+    .map(
+      (p, i) => `
+      <button class="phase-button" type="button" role="tab" aria-selected="false" data-phase="${i}">
+        <span class="phase-no">${pad(i + 1)}</span>
+        <strong>${p.short}</strong>
+        <small>${p.tag}</small>
+      </button>`
+    )
+    .join("");
+  $$(".phase-button", container).forEach((btn) =>
+    btn.addEventListener("click", () => {
+      stopTour();
+      setPhase(Number(btn.dataset.phase));
+    })
+  );
+  $("#brief-total").textContent = `/ ${pad(battle.phases.length)}`;
+}
+
+function renderBrief(phase, index) {
+  $("#brief-number").textContent = pad(index + 1);
+  $("#brief-name").textContent = phase.name;
+  $("#brief-date").textContent = phase.date;
+  $("#brief-intent").textContent = phase.intent;
+  $("#brief-goal").textContent = phase.goal;
+  $("#brief-result").textContent = phase.result;
+  const brief = $(".battle-brief");
+  brief.classList.remove("is-swapping");
+  void brief.offsetWidth;
+  brief.classList.add("is-swapping");
+}
+
+function renderCommanders(battle) {
+  const c = battle.commanders;
+  $("#red-commanders-title").textContent = c.redLabel;
+  $("#red-commanders-sub").textContent = c.redSub;
+  $("#blue-commanders-title").textContent = c.blueLabel;
+  $("#blue-commanders-sub").textContent = c.blueSub;
+  const row = (p) => `<div class="commander-row"><strong>${p.name}</strong><span>${p.role}</span></div>`;
+  $("#red-commanders").innerHTML = c.red.map(row).join("");
+  $("#blue-commanders").innerHTML = c.blue.map(row).join("");
+}
+
+function renderOrder(battle) {
+  const side = state.orderSide;
+  const fs = battle.mapConfig.filterSides;
+  $('[data-order-side="red"]').textContent = `${fs.red}序列`;
+  $('[data-order-side="blue"]').textContent = `${fs.blue}序列`;
+  $("#order-table").innerHTML = (battle.orderOfBattle[side] || [])
+    .map(([unit, cmd, role]) => `<div class="order-row"><strong>${unit}</strong><b>${cmd}</b><span>${role}</span></div>`)
+    .join("");
+  $("#order-table").dataset.side = side;
+  $$("[data-order-side]").forEach((btn) => {
+    const active = btn.dataset.orderSide === side;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-selected", String(active));
+  });
+}
+
+function renderDossier(battle, index) {
+  const phase = battle.phases[index];
+  $("#dossier-title").textContent = `${phase.name} · ${phase.date}`;
+  $("#dossier-list").innerHTML = phase.detail
+    .map(([d, t, c]) => `<div class="dossier-row"><time>${d}</time><strong>${t}</strong><span>${c}</span></div>`)
+    .join("");
+  const tabs = $(".dossier-tabs");
+  tabs.innerHTML = battle.phases
+    .map(
+      (p, i) =>
+        `<button type="button" role="tab" class="${i === index ? "is-active" : ""}" aria-selected="${i === index}" data-dossier-phase="${i}" title="${p.name}">${pad(i + 1)}</button>`
+    )
+    .join("");
+  $$("[data-dossier-phase]", tabs).forEach((btn) =>
+    btn.addEventListener("click", () => {
+      stopTour();
+      setPhase(Number(btn.dataset.dossierPhase));
+    })
+  );
+}
+
+function renderSituation(battle) {
+  const s = battle.situation || {};
+  $("#situation-eyebrow").textContent = s.eyebrow || "";
+  $("#situation-title").innerHTML = s.title || "";
+  $("#situation-narrative").textContent = s.narrative || "";
+
+  const fc = s.forceComparison;
+  const fill = (el, d) => {
+    if (!el || !d) return;
+    $(".force-label span", el).textContent = d.label;
+    $(".force-label strong", el).textContent = d.count;
+    $(".force-bar span", el).style.setProperty("--width", d.width || "50%");
+    $("p", el).textContent = d.desc;
+  };
+  fill($(".force-red"), fc?.red);
+  fill($(".force-blue"), fc?.blue);
+  $("#force-note").textContent = fc?.note || "";
+
+  const dep = (el, d) => {
+    if (!el || !d) return;
+    $("header span", el).textContent = d.title;
+    $("header small", el).textContent = d.subtitle;
+    $("ul", el).innerHTML = d.items.map(([k, v]) => `<li><b>${k}</b><span>${v}</span></li>`).join("");
+  };
+  dep($("#deploy-red"), s.deployments?.red);
+  dep($("#deploy-blue"), s.deployments?.blue);
+}
+
+function renderLogic(battle) {
+  const l = battle.logic || {};
+  $("#logic-eyebrow").textContent = l.eyebrow || "";
+  $("#logic-title").innerHTML = l.title || "";
+  $("#logic-stage").innerHTML = (l.steps || [])
+    .map(
+      (s) => `
+      <article class="logic-step">
+        <span class="logic-no">${s.roman}</span>
+        <div><h3>${s.title}</h3><p>${s.desc}</p></div>
+        <strong class="logic-key">${s.keyword}</strong>
+      </article>`
+    )
+    .join("");
+  const loop = l.decisionLoop || {};
+  $("#loop-eyebrow").textContent = loop.eyebrow || "";
+  $("#loop-title").innerHTML = loop.title || "";
+  $("#loop-items").innerHTML = (loop.items || [])
+    .map(([n, t, s]) => `<li><span>${n}</span><b>${t}</b><small>${s}</small></li>`)
+    .join("");
+}
+
+function renderChronicle(battle) {
+  const c = battle.chronicle || {};
+  $("#chronicle-eyebrow").textContent = c.eyebrow || "";
+  $("#chronicle-title").innerHTML = c.title || "";
+  $("#chronicle-deck").textContent = c.deck || "";
+  $("#timeline-list").innerHTML = (c.events || [])
+    .map((ev) => {
+      const inner = `
+        <time>${ev.date}</time><span class="event-dot"></span>
+        <div class="event-body"><small>${ev.stage}</small><h3>${ev.title}</h3><p>${ev.desc}</p></div>
+        <span class="event-tag">${ev.tag}</span>`;
+      return ev.isOutcome
+        ? `<div class="timeline-event timeline-outcome">${inner}</div>`
+        : `<button class="timeline-event" type="button" data-phase="${ev.phaseIndex}">${inner}</button>`;
+    })
+    .join("");
+  $$("#timeline-list button[data-phase]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      stopTour();
+      setPhase(Number(btn.dataset.phase));
+      $("#sandtable").scrollIntoView({ behavior: "smooth" });
+    })
+  );
+}
+
+function renderClosing(battle) {
+  const m = battle.meta || {};
+  $("#closing-mark").textContent = m.quoteMark || battle.seal;
+  $("#closing-quote").textContent = m.quote || "";
+  $("#closing-author").textContent = m.quoteAuthor ? `—— ${m.quoteAuthor}` : "";
+  $("#closing-desc").textContent = m.quoteDesc || "";
+}
+
+function renderFooter(battle) {
+  $("#footer-title").textContent = `${battle.title} · 战史沙盘`;
+  $("#footer-sources").innerHTML =
+    `<span>主要史料与参考</span>` +
+    battle.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noreferrer">${s.title}</a>`).join("");
+}
+
+/* ---------------- 阶段与推演 ---------------- */
+
+function setPhase(index) {
+  const battle = state.battle;
+  if (!battle) return;
+  const total = battle.phases.length;
+  state.phase = Math.max(0, Math.min(total - 1, Number(index)));
+  const phase = battle.phases[state.phase];
+
+  renderBrief(phase, state.phase);
+  mapRenderer.setPhase(state.phase);
+  renderDossier(battle, state.phase);
+
+  $("#phase-progress-bar").style.width = `${((state.phase + 1) / total) * 100}%`;
+  $$(".phase-button").forEach((btn, i) => {
+    btn.classList.toggle("is-active", i === state.phase);
+    btn.classList.toggle("is-done", i < state.phase);
+    btn.setAttribute("aria-selected", String(i === state.phase));
+  });
+  $("#phase-prev").disabled = state.phase === 0;
+  $("#phase-next").disabled = state.phase === total - 1;
 }
 
 function stopTour() {
-  window.clearInterval(tourTimer);
-  tourTimer = null;
-  playButton.classList.remove("is-playing");
-  playButton.querySelector("span:last-child").textContent = "自动推演";
+  if (state.tourTimer) {
+    clearInterval(state.tourTimer);
+    state.tourTimer = null;
+  }
+  const btn = $("#play-tour");
+  btn.classList.remove("is-playing");
+  $(".play-label", btn).textContent = "自动推演";
 }
 
 function startTour() {
-  setPhase(0);
-  playButton.classList.add("is-playing");
-  playButton.querySelector("span:last-child").textContent = "暂停推演";
-  tourTimer = window.setInterval(() => {
-    if (currentPhase === phases.length - 1) {
-      stopTour();
-      return;
-    }
-    setPhase(currentPhase + 1);
-  }, 3600);
+  if (!state.battle) return;
+  const total = state.battle.phases.length;
+  if (state.phase >= total - 1) setPhase(0);
+  const btn = $("#play-tour");
+  btn.classList.add("is-playing");
+  $(".play-label", btn).textContent = "暂停推演";
+  state.tourTimer = setInterval(() => {
+    if (state.phase >= total - 1) return stopTour();
+    setPhase(state.phase + 1);
+  }, TOUR_INTERVAL);
 }
 
-createFormationNodes();
-renderCommanders();
-renderOrder();
-renderBattleMenu();
+/* ---------------- 全局事件 ---------------- */
 
-document.querySelector(".dossier-tabs").innerHTML = phases
-  .map((phase, index) => `<button type="button" role="tab" aria-selected="${index === 0}" data-dossier-phase="${index}">${String(index + 1).padStart(2, "0")}</button>`)
-  .join("");
-
-phaseButtons.forEach((button) => {
-  button.addEventListener("click", () => {
+function setupGlobalEvents() {
+  $("#play-tour").addEventListener("click", () => (state.tourTimer ? stopTour() : startTour()));
+  $("#phase-prev").addEventListener("click", () => {
     stopTour();
-    setPhase(button.dataset.phase);
+    setPhase(state.phase - 1);
   });
-});
-
-document.querySelectorAll("[data-dossier-phase]").forEach((button) => {
-  button.addEventListener("click", () => {
+  $("#phase-next").addEventListener("click", () => {
     stopTour();
-    setPhase(button.dataset.dossierPhase);
+    setPhase(state.phase + 1);
   });
-});
 
-document.querySelectorAll("[data-order-side]").forEach((button) => {
-  button.addEventListener("click", () => renderOrder(button.dataset.orderSide));
-});
-
-document.querySelectorAll("[data-force-filter]").forEach((button) => {
-  button.addEventListener("click", () => {
-    forceFilter = button.dataset.forceFilter;
-    document.querySelectorAll("[data-force-filter]").forEach((item) => item.classList.toggle("is-active", item === button));
-    updateFormations(phases[currentPhase]);
+  $("#battle-switcher").addEventListener("click", (e) => {
+    e.stopPropagation();
+    $("#battle-menu").hidden ? openMenu() : closeMenu();
   });
-});
-
-document.querySelectorAll(".timeline-event[data-phase]").forEach((event) => {
-  event.addEventListener("click", () => {
-    stopTour();
-    setPhase(event.dataset.phase, { scrollToMap: true });
+  document.addEventListener("click", (e) => {
+    const menu = $("#battle-menu");
+    if (!menu.hidden && !menu.contains(e.target) && !e.target.closest("#battle-switcher")) closeMenu();
   });
-});
 
-playButton.addEventListener("click", () => {
-  if (tourTimer) stopTour();
-  else startTour();
-});
+  $$("[data-order-side]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      state.orderSide = btn.dataset.orderSide;
+      if (state.battle) renderOrder(state.battle);
+    })
+  );
 
-document.querySelector("#battle-switcher").addEventListener("click", () => {
-  battleMenu.hidden = !battleMenu.hidden;
-});
+  $$("[data-era-filter]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      state.eraFilter = btn.dataset.eraFilter;
+      $$("[data-era-filter]").forEach((b) => {
+        const active = b === btn;
+        b.classList.toggle("is-active", active);
+        b.setAttribute("aria-selected", String(active));
+      });
+      renderArchive();
+      setupReveal();
+    })
+  );
 
-document.addEventListener("click", (event) => {
-  if (!battleMenu.hidden && !battleMenu.contains(event.target) && !event.target.closest("#battle-switcher")) {
-    battleMenu.hidden = true;
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeMenu();
+    if (!state.battle || e.target.closest("input, textarea")) return;
+    if (e.key === "ArrowRight") {
+      stopTour();
+      setPhase(state.phase + 1);
+    } else if (e.key === "ArrowLeft") {
+      stopTour();
+      setPhase(state.phase - 1);
+    } else if (e.key === " " && e.target === document.body) {
+      e.preventDefault();
+      state.tourTimer ? stopTour() : startTour();
+    }
+  });
+
+  window.addEventListener("popstate", () => route());
+
+  const header = $(".site-header");
+  const navLinks = $$(".nav-links a");
+  const sectionIds = ["sandtable", "command", "situation", "logic", "chronicle"];
+
+  const onScroll = () => {
+    header.classList.toggle("is-scrolled", window.scrollY > 24);
+    if (state.battle) {
+      let currentId = sectionIds[0];
+      const probe = window.scrollY + 180;
+      for (const id of sectionIds) {
+        const sec = document.getElementById(id);
+        if (sec && sec.offsetTop <= probe) currentId = id;
+      }
+      navLinks.forEach((a) => a.classList.toggle("is-active", a.getAttribute("href") === `#${currentId}`));
+    }
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  bindHomeLinks();
+}
+
+function setupReveal() {
+  revealObserver?.disconnect();
+  const items = $$(
+    ".archive-card, .commander-side, .order-layout, .phase-dossier, .force-line, .deployment, .logic-step, .decision-loop, .timeline-event"
+  ).filter((el) => !el.closest("[hidden]"));
+
+  if (!("IntersectionObserver" in window)) {
+    items.forEach((el) => el.classList.add("is-visible"));
+    return;
   }
-});
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") battleMenu.hidden = true;
-  if (event.key === "ArrowRight" && currentPhase < phases.length - 1) {
-    stopTour();
-    setPhase(currentPhase + 1);
-  }
-  if (event.key === "ArrowLeft" && currentPhase > 0) {
-    stopTour();
-    setPhase(currentPhase - 1);
-  }
-});
+  revealObserver = new IntersectionObserver(
+    (entries) =>
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          revealObserver.unobserve(entry.target);
+        }
+      }),
+    { threshold: 0.02, rootMargin: "0px 0px 80px 0px" }
+  );
 
-const revealObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) entry.target.classList.add("is-visible");
-    });
-  },
-  { threshold: 0.12 }
-);
+  const vh = window.innerHeight || 900;
+  items.forEach((el) => {
+    el.classList.add("reveal-item");
+    const rect = el.getBoundingClientRect();
+    if (rect.top < vh + 60) {
+      el.classList.add("is-visible");
+    } else {
+      el.classList.remove("is-visible");
+      revealObserver.observe(el);
+    }
+  });
+}
 
-document.querySelectorAll(".deployment, .logic-step, .timeline-event, .commander-side, .order-layout, .phase-dossier").forEach((item) => {
-  item.classList.add("reveal-item");
-  revealObserver.observe(item);
-});
+/* ---------------- 启动 ---------------- */
 
-setPhase(0);
+function init() {
+  mapRenderer = new MapRenderer($("#map-stage"));
+  renderArchive();
+  setupGlobalEvents();
+  route();
+}
+
+init();

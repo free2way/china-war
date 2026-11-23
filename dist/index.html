@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="战史沙盘：以数据驱动的交互方式推演中国历史上的著名战役——四渡赤水、官渡之战等。" />
+    <meta name="description" content="战史沙盘：以数据驱动的交互方式推演古今中外著名战役——四渡赤水、官渡之战、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
-    <title>战史沙盘｜中国历史著名战役交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=2" />
+    <title>战史沙盘｜世界历史著名战役交互推演</title>
+    <link rel="stylesheet" href="./styles.css?v=3" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
@@ -19,7 +19,7 @@
         <a href="#sandtable">沙盘</a>
         <a href="#command">指挥序列</a>
         <a href="#situation">战役态势</a>
-        <a href="#logic">制胜逻辑</a>
+        <a href="#logic">胜负逻辑</a>
         <a href="#chronicle">事件全览</a>
       </nav>
 
@@ -38,10 +38,10 @@
       <section class="home-hero">
         <div class="home-hero-bg" aria-hidden="true"></div>
         <div class="home-hero-copy">
-          <p class="eyebrow"><span>中国战争史 · 交互沙盘档案</span></p>
+          <p class="eyebrow"><span>世界战争史 · 中外经典战役交互沙盘</span></p>
           <h1>观<span class="accent">兵</span>形之变，<br />读胜负之机。</h1>
           <p class="home-deck">
-            每一场著名战役都是一盘在时间中展开的沙盘。选择一份战役档案，按阶段推演双方部署、机动路线与决策逻辑。
+            跨越古今中外，每一场著名战役都是一盘在时间与地理中展开的沙盘。选择一份战役档案，按阶段推演双方部署、机动路线与决策逻辑。
           </p>
           <div class="home-stats" id="home-stats"></div>
         </div>
@@ -50,13 +50,14 @@
       <section class="archive" aria-labelledby="archive-title">
         <div class="archive-head">
           <div>
-            <p class="eyebrow">ARCHIVES · 战役档案</p>
+            <p class="eyebrow">GLOBAL ARCHIVES · 战史档案馆</p>
             <h2 id="archive-title">选择一场战役</h2>
           </div>
-          <div class="archive-filters" id="archive-filters" role="tablist" aria-label="按时代筛选战役">
+          <div class="archive-filters" id="archive-filters" role="tablist" aria-label="按战场与时代筛选战役">
             <button type="button" class="is-active" role="tab" aria-selected="true" data-era-filter="all">全部档案</button>
-            <button type="button" role="tab" aria-selected="false" data-era-filter="ancient">古代战役</button>
-            <button type="button" role="tab" aria-selected="false" data-era-filter="modern">近现代战役</button>
+            <button type="button" role="tab" aria-selected="false" data-era-filter="china">中国战史</button>
+            <button type="button" role="tab" aria-selected="false" data-era-filter="world">世界战史</button>
+            <button type="button" role="tab" aria-selected="false" data-era-filter="ww2">第二次世界大战</button>
           </div>
         </div>
         <div class="archive-grid" id="archive-grid"></div>
@@ -238,7 +239,7 @@
       </section>
 
       <section class="section logic" id="logic" aria-labelledby="logic-title">
-        <div class="section-index"><span>03</span>制胜逻辑</div>
+        <div class="section-index"><span>03</span><b id="logic-section-label">胜负逻辑</b></div>
         <div class="section-head single">
           <div>
             <p class="eyebrow" id="logic-eyebrow"></p>
@@ -288,6 +289,6 @@
       <p>地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=2"></script>
+    <script type="module" src="./app.js?v=3"></script>
   </body>
 </html>

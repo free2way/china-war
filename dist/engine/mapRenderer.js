@@ -181,7 +181,10 @@ const MARKER_GLYPHS = {
   fire: "火",
   clash: "战",
   turning: "转",
-  victory: "胜"
+  victory: "胜",
+  airborne: "伞",
+  amphibious: "登",
+  bridge: "桥"
 };
 
 export class MapRenderer {
@@ -306,15 +309,17 @@ export class MapRenderer {
         g.append(label);
 
         const showLocInfo = (event) => {
+          const kindMap = {
+            capital: "战略中枢",
+            fortress: "关隘要塞",
+            ford: "渡口津要",
+            bridge: "关键桥梁",
+            beach: "登陆海滩",
+            port: "战略港口",
+            dropzone: "空降着陆区"
+          };
           this.showTooltip(event, {
-            kicker:
-              loc.kind === "capital"
-                ? "战略中枢"
-                : loc.kind === "fortress"
-                  ? "关隘要塞"
-                  : loc.kind === "ford"
-                    ? "渡口津要"
-                    : "战役地标",
+            kicker: kindMap[loc.kind] || "战役地标",
             title: loc.name,
             body: loc.sub || "战役关键地理节点"
           });
@@ -525,8 +530,16 @@ export class MapRenderer {
       g.append(glyph);
 
       const showMarkerInfo = (event) => {
+        const typeMap = {
+          fire: "奇袭火攻",
+          turning: "战略转折",
+          victory: "战役突破",
+          airborne: "空降突击",
+          amphibious: "两栖抢滩",
+          bridge: "夺桥激战"
+        };
         this.showTooltip(event, {
-          kicker: type === "fire" ? "奇袭火攻" : type === "turning" ? "战略转折" : "关键战事",
+          kicker: typeMap[type] || "关键战事",
           title: m.label,
           body: m.desc || ""
         });

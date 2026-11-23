@@ -142,6 +142,8 @@ body[data-view="home"] .nav-links { visibility: hidden; }
   border-radius: var(--radius);
   box-shadow: 0 30px 80px rgba(0,0,0,.45);
   backdrop-filter: blur(18px);
+  max-height: min(74vh, 560px);
+  overflow-y: auto;
   animation: menu-in .22s var(--ease);
 }
 .battle-menu header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px 12px; font-size: 10px; letter-spacing: .16em; color: var(--on-dark-3); }
@@ -279,10 +281,19 @@ body[data-view="home"] .nav-links { visibility: hidden; }
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
   mix-blend-mode: soft-light;
 }
-/* 主题纹理：赤水 — 等高线；官渡 — 汉代回纹 */
+/* 主题纹理：赤水 — 等高线；官渡 — 汉代回纹；二战 — 作战坐标网与海图经纬 */
 body[data-theme="red-army-ink"] .sandtable-bg { background-image: repeating-radial-gradient(ellipse at 68% 42%, transparent 0 26px, rgba(232, 228, 216, .045) 27px, transparent 28px); }
 body[data-theme="han-bronze"] .sandtable-bg {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cpath d='M4 4h20v20H10V10h8v8' fill='none' stroke='%23c4923a' stroke-opacity='.07' stroke-width='1.4'/%3E%3Cpath d='M32 32h20v20H38V38h8v8' fill='none' stroke='%23c4923a' stroke-opacity='.07' stroke-width='1.4'/%3E%3C/svg%3E");
+}
+body[data-theme="ww2-allied-ops"] .sandtable-bg {
+  background-image:
+    linear-gradient(rgba(94, 182, 207, .045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94, 182, 207, .045) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+body[data-theme="ww2-airborne-olive"] .sandtable-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cpath d='M32 26v12M26 32h12' fill='none' stroke='%23c9a452' stroke-opacity='.09' stroke-width='1'/%3E%3C/svg%3E");
 }
 
 .sandtable-side { position: relative; z-index: 3; display: flex; flex-direction: column; gap: 14px; min-height: 0; padding-top: 6px; }
@@ -350,6 +361,12 @@ body[data-theme="han-bronze"] .sandtable-bg {
 .river-key { stroke: var(--river-key); stroke-width: 6.2; }
 .river-minor { stroke-width: 2.4; stroke-opacity: .7; stroke-dasharray: 8 4; }
 .marsh ellipse { fill: rgba(111, 156, 147, .12); stroke: rgba(111, 156, 147, .4); stroke-dasharray: 3 3; }
+.sea-zone { fill: rgba(34, 72, 96, .28); stroke: none; }
+.coastline { fill: none; stroke: rgba(164, 206, 224, .34); stroke-width: 1.8; }
+.beach-sector { fill: none; stroke: rgba(216, 168, 78, .72); stroke-width: 5; stroke-linecap: round; }
+.drop-zone { fill: color-mix(in srgb, var(--accent-bright) 11%, transparent); stroke: color-mix(in srgb, var(--accent-bright) 58%, transparent); stroke-width: 1.4; stroke-dasharray: 4 4; }
+.highway { fill: none; stroke: rgba(216, 168, 78, .62); stroke-width: 3.4; stroke-dasharray: 10 5; stroke-linecap: round; }
+.fort-line { fill: none; stroke: rgba(184, 107, 94, .45); stroke-width: 2; stroke-dasharray: 3 6; }
 .river-labels text { fill: rgba(232, 226, 210, .5); font: 13px var(--serif); letter-spacing: .32em; }
 
 .enemy-route-path { fill: none; stroke: var(--opposing); stroke-opacity: .7; stroke-width: 2; stroke-dasharray: 7 7; animation: march 1.6s linear infinite reverse; }
@@ -379,6 +396,12 @@ body[data-theme="han-bronze"] .sandtable-bg {
 .battle-marker.marker-victory .marker-pulse { fill: var(--gold); }
 .battle-marker.marker-victory .marker-badge { fill: #3f2f12; stroke: var(--gold); }
 .battle-marker.marker-turning .marker-badge { fill: rgba(20, 24, 22, .94); stroke: var(--gold); }
+.battle-marker.marker-airborne .marker-pulse { fill: #e06a58; }
+.battle-marker.marker-airborne .marker-badge { fill: #4a1c17; stroke: #f08a78; }
+.battle-marker.marker-amphibious .marker-pulse { fill: #5eb6cf; }
+.battle-marker.marker-amphibious .marker-badge { fill: #153745; stroke: #7fd0e8; }
+.battle-marker.marker-bridge .marker-pulse { fill: #d8a84e; }
+.battle-marker.marker-bridge .marker-badge { fill: #3b2b12; stroke: #e6be6c; }
 .battle-marker:hover .marker-badge { stroke-width: 2.4; }
 
 .formation { transition: opacity .4s ease, transform .85s var(--ease); cursor: pointer; outline: none; }
@@ -479,6 +502,7 @@ body[data-theme="han-bronze"] .sandtable-bg {
 /* ---------------- Paper sections ---------------- */
 .section { padding: 110px clamp(20px, 6vw, 96px) 120px; color: var(--ink); background: var(--paper); }
 .section-index { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid var(--line-light); font-size: 11px; letter-spacing: .18em; color: var(--muted); }
+.section-index b { font-weight: 400; }
 .section-index span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--paper-light); background: var(--accent); font: 11px var(--mono); letter-spacing: 0; }
 .section-head { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); gap: 6vw; align-items: end; margin: 64px 0 72px; }
 .section-head.single { grid-template-columns: 1fr; }

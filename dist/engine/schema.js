@@ -1,5 +1,5 @@
 // 战役沙盘数据校验、主题预设与规范化层
-// 为后续扩展任意历史战役提供统一的数据结构、时代主题预设与默认兜底
+// 支持中国历代名战与世界著名战役（含二战登陆、空降、机动作战）
 
 export const THEME_PRESETS = {
   "red-army-ink": {
@@ -31,7 +31,7 @@ export const THEME_PRESETS = {
     opposing: "#6e9e96",
     opposingSoft: "rgba(110, 158, 150, 0.22)",
     gold: "#d9a441",
-    riverKey: "rgba(182, 145, 76, 0.72)",
+    riverKey: "rgba(184, 146, 78, 0.72)",
     stageBg: "#14100c",
     stageBgAlt: "#201912",
     stageGlow: "rgba(196, 146, 58, 0.14)",
@@ -61,6 +61,46 @@ export const THEME_PRESETS = {
     ink: "#161d22",
     muted: "#5b6770",
     closingBg: "#1b3140"
+  },
+  "ww2-allied-ops": {
+    id: "ww2-allied-ops",
+    accent: "#3b8ea5",
+    accentBright: "#5eb6cf",
+    accentDark: "#245d6e",
+    accentSoft: "rgba(59, 142, 165, 0.19)",
+    opposing: "#b86b5e",
+    opposingSoft: "rgba(184, 107, 94, 0.22)",
+    gold: "#d8a84e",
+    riverKey: "rgba(86, 146, 176, 0.78)",
+    stageBg: "#0d1318",
+    stageBgAlt: "#141f27",
+    stageGlow: "rgba(59, 142, 165, 0.16)",
+    paper: "#e4e7e9",
+    paperLight: "#f1f3f4",
+    paperMuted: "#d3d9dc",
+    ink: "#161c21",
+    muted: "#56636d",
+    closingBg: "#152a36"
+  },
+  "ww2-airborne-olive": {
+    id: "ww2-airborne-olive",
+    accent: "#b5493a",
+    accentBright: "#dc6452",
+    accentDark: "#7d2d22",
+    accentSoft: "rgba(181, 73, 58, 0.19)",
+    opposing: "#7c949c",
+    opposingSoft: "rgba(124, 148, 156, 0.22)",
+    gold: "#c9a452",
+    riverKey: "rgba(92, 148, 168, 0.84)",
+    stageBg: "#101410",
+    stageBgAlt: "#192019",
+    stageGlow: "rgba(138, 154, 102, 0.15)",
+    paper: "#e7e6de",
+    paperLight: "#f3f2ec",
+    paperMuted: "#d8d6ca",
+    ink: "#191c18",
+    muted: "#5f645b",
+    closingBg: "#2e1b18"
   }
 };
 

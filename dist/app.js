@@ -1,9 +1,9 @@
 // 战史沙盘 · 应用入口
 // 负责路由（档案馆 / 战役沙盘）、主题切换与各章节渲染；地图交互交由 MapRenderer。
 
-import { battleRegistry, loadBattle, getBattleEntry } from "./data/battles.js?v=2";
-import { normalizeBattle } from "./engine/schema.js?v=2";
-import { MapRenderer } from "./engine/mapRenderer.js?v=2";
+import { battleRegistry, loadBattle, getBattleEntry } from "./data/battles.js?v=3";
+import { normalizeBattle } from "./engine/schema.js?v=3";
+import { MapRenderer } from "./engine/mapRenderer.js?v=3";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -92,10 +92,11 @@ function renderBattleMenu() {
 
 function renderArchive() {
   const grid = $("#archive-grid");
-  const filtered =
-    state.eraFilter === "all"
-      ? battleRegistry
-      : battleRegistry.filter((b) => b.category === state.eraFilter);
+  const filtered = battleRegistry.filter((b) => {
+    if (state.eraFilter === "all") return true;
+    if (state.eraFilter === "china" || state.eraFilter === "world") return b.region === state.eraFilter;
+    return b.category === state.eraFilter;
+  });
 
   grid.innerHTML = filtered
     .map((item) => {
@@ -106,12 +107,12 @@ function renderArchive() {
         <button type="button" class="archive-card-hit" data-battle-id="${item.id}" ${available ? "" : "disabled"}
                 aria-label="${available ? "进入" : "筹备中："}${item.name}沙盘"></button>
         <div class="card-top">
-          <span class="card-no">档案 ${pad(idx + 1)}</span>
+          <span class="card-no">档案 ${pad(idx + 1)} · ${item.regionLabel || "战史"}</span>
           <span class="card-status">${available ? "可推演" : "筹备中"}</span>
         </div>
         <div class="card-seal" aria-hidden="true">${item.seal}</div>
         <div class="card-body">
-          <small>${item.era}</small>
+          <small>${item.era}${item.codename ? ` · ${item.codename}` : ""}</small>
           <h3>${item.name}</h3>
           <p>${item.summary}</p>
         </div>
@@ -130,10 +131,11 @@ function renderArchive() {
   );
 
   const available = battleRegistry.filter((b) => b.status === "available").length;
-  const planned = battleRegistry.length - available;
+  const chinaCount = battleRegistry.filter((b) => b.status === "available" && b.region === "china").length;
+  const worldCount = battleRegistry.filter((b) => b.status === "available" && b.region === "world").length;
   $("#home-stats").innerHTML = `
     <div><strong>${pad(available)}</strong><span>可推演战役</span></div>
-    <div><strong>${pad(planned)}</strong><span>筹备中档案</span></div>
+    <div><strong>${pad(chinaCount)} / ${pad(worldCount)}</strong><span>中国战史 / 世界战史</span></div>
     <div><strong>${battleRegistry.length ? `${Math.min(...battleRegistry.map((b) => +b.period))}—${Math.max(...battleRegistry.map((b) => +b.period))}` : "—"}</strong><span>时间跨度（年）</span></div>`;
 }
 
@@ -188,7 +190,7 @@ function showHome() {
   document.body.dataset.view = "home";
   $("#view-home").hidden = false;
   $("#view-battle").hidden = true;
-  document.title = "战史沙盘｜中国历史著名战役交互推演";
+  document.title = "战史沙盘｜世界历史著名战役交互推演";
   $("#switcher-seal").textContent = "史";
   $("#switcher-kicker").textContent = "战役档案";
   $("#switcher-name").textContent = "选择战役";
@@ -383,6 +385,8 @@ function renderSituation(battle) {
 
 function renderLogic(battle) {
   const l = battle.logic || {};
+  const labelEl = $("#logic-section-label");
+  if (labelEl) labelEl.textContent = l.sectionLabel || "胜负逻辑";
   $("#logic-eyebrow").textContent = l.eyebrow || "";
   $("#logic-title").innerHTML = l.title || "";
   $("#logic-stage").innerHTML = (l.steps || [])

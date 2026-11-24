@@ -39,7 +39,25 @@ export const battleRegistry = [
     seal: "官",
     accent: "#c4923a",
     status: "available",
-    loader: () => import("./guandu-200.js?v=3")
+    loader: () => import("./guandu-200.js?v=4")
+  },
+  {
+    id: "changjin-1950",
+    name: "长津湖战役",
+    codename: "CHOSIN · 1950",
+    period: "1950",
+    periodLabel: "1950.11—12",
+    era: "抗美援朝 · 第二次战役东线",
+    region: "china",
+    regionLabel: "中国战史",
+    category: "china-modern",
+    theater: "朝鲜东北部 · 盖马高原",
+    opponents: "志愿军第9兵团 VS 美军第10军",
+    summary: "零下四十度极寒雪夜分割包围，全歼美军“北极熊团”，迫使美第10军从兴南港海上撤离。",
+    seal: "津",
+    accent: "#d1382c",
+    status: "available",
+    loader: () => import("./changjin-1950.js?v=4")
   },
   {
     id: "normandy-1944",

@@ -1,9 +1,9 @@
 // 战史沙盘 · 应用入口
 // 负责路由（档案馆 / 战役沙盘）、主题切换与各章节渲染；地图交互交由 MapRenderer。
 
-import { battleRegistry, loadBattle, getBattleEntry } from "./data/battles.js?v=3";
-import { normalizeBattle } from "./engine/schema.js?v=3";
-import { MapRenderer } from "./engine/mapRenderer.js?v=3";
+import { battleRegistry, loadBattle, getBattleEntry } from "./data/battles.js?v=7";
+import { normalizeBattle } from "./engine/schema.js?v=7";
+import { MapRenderer } from "./engine/mapRenderer.js?v=7";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -184,6 +184,7 @@ async function route(options = {}) {
 
 function showHome() {
   stopTour();
+  mapRenderer?.stopRouteMovers();
   state.battleId = null;
   state.battle = null;
   applyTheme(null);
@@ -301,6 +302,13 @@ function renderBrief(phase, index) {
   $("#brief-intent").textContent = phase.intent;
   $("#brief-goal").textContent = phase.goal;
   $("#brief-result").textContent = phase.result;
+  const fNum = $("#float-brief-num");
+  if (fNum) {
+    fNum.textContent = pad(index + 1);
+    $("#float-brief-name").textContent = phase.name;
+    $("#float-brief-date").textContent = phase.date;
+    $("#float-brief-goal").textContent = phase.goal;
+  }
   const brief = $(".battle-brief");
   brief.classList.remove("is-swapping");
   void brief.offsetWidth;

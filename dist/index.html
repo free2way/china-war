@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="战史沙盘：以数据驱动的交互方式推演古今中外著名战役——四渡赤水、官渡之战、诺曼底登陆、市场花园行动等。" />
+    <meta name="description" content="战史沙盘：以三维立体交互方式推演古今中外著名战役——四渡赤水、官渡之战、长津湖战役、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
-    <title>战史沙盘｜世界历史著名战役交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=3" />
+    <title>战史沙盘｜世界历史著名战役三维交互推演</title>
+    <link rel="stylesheet" href="./styles.css?v=7" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
@@ -93,57 +93,111 @@
           </aside>
         </div>
 
-        <div class="map-stage" id="map-stage" aria-label="动态战役地图">
+        <div class="map-stage is-3d" id="map-stage" aria-label="三维动态战役沙盘">
+          <div class="stage-reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
           <div class="map-toolbar">
             <div class="map-filters" role="group" aria-label="阵营筛选"></div>
+            <div class="map-view-controls" role="group" aria-label="三维视角控制">
+              <button type="button" class="is-active" data-view-mode="3d" title="三维立体起伏地形">3D 沙盘</button>
+              <button type="button" data-cam-action="low-fly" title="低空临境观察山势">低空</button>
+              <button type="button" class="is-active" data-cam-action="auto-cam" aria-pressed="true" title="切换阶段时电影运镜自动聚焦战区">运镜</button>
+              <button type="button" data-view-mode="2d" title="二维平面地图">2D 平面</button>
+              <span class="toolbar-sep" aria-hidden="true"></span>
+              <button type="button" data-cam-action="zoom-out" aria-label="缩小视角" title="缩小">−</button>
+              <button type="button" data-cam-action="zoom-in" aria-label="放大视角" title="放大">＋</button>
+              <button type="button" data-cam-action="reset" aria-label="重置视角" title="重置视角">↺</button>
+              <span class="toolbar-sep" aria-hidden="true"></span>
+              <button type="button" data-cam-action="expand" id="stage-expand-btn" aria-pressed="false" title="展开/收起全屏沙盘">⛶ 大屏</button>
+            </div>
             <div class="map-layer-toggles" role="group" aria-label="图层开关"></div>
           </div>
 
-          <svg class="battle-map" viewBox="0 0 880 720" role="img" aria-labelledby="map-title map-desc">
-            <title id="map-title">战役态势示意图</title>
-            <desc id="map-desc">按阶段动态推演双方部署与机动路线。</desc>
-            <defs>
-              <filter id="roughen">
-                <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="8" result="noise" />
-                <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" />
-              </filter>
-              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="4" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-              <marker id="arrow-red" viewBox="0 0 12 12" markerWidth="14" markerHeight="14" refX="9.5" refY="6" orient="auto" markerUnits="userSpaceOnUse">
-                <path d="M1,1.5 L11,6 L1,10.5 L3.6,6 z" fill="#e2513f" />
-              </marker>
-              <marker id="arrow-enemy" viewBox="0 0 12 12" markerWidth="11" markerHeight="11" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
-                <path d="M1.5,2 L10.5,6 L1.5,10 L3.5,6 z" fill="#8aa2aa" />
-              </marker>
-              <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-opacity=".07" stroke-width="1" />
-              </pattern>
-            </defs>
+          <div class="hud-env-badge" id="hud-env-badge" aria-hidden="true"></div>
+          <div class="hud-compass" aria-hidden="true" title="北向指北针">
+            <span class="hud-compass-n">N</span>
+            <span class="hud-compass-needle" id="hud-compass-needle"></span>
+          </div>
 
-            <g class="map-frame" aria-hidden="true">
-              <rect x="6" y="6" width="868" height="708" rx="4" />
-            </g>
-            <g id="map-terrain" class="map-terrain"></g>
-            <g id="map-enemy-routes" class="enemy-routes" aria-hidden="true"></g>
-            <g id="map-routes" class="routes" aria-hidden="true"></g>
-            <g id="map-locations" class="locations"></g>
-            <g id="map-markers" class="map-markers" aria-label="关键战事标记"></g>
-            <g id="formation-layer" class="formation-layer" aria-label="当前阶段双方部队"></g>
+          <div class="stage-float-brief" aria-live="polite">
+            <span class="float-brief-num" id="float-brief-num">01</span>
+            <div class="float-brief-text">
+              <div><strong id="float-brief-name"></strong><small id="float-brief-date"></small></div>
+              <p id="float-brief-goal"></p>
+            </div>
+          </div>
 
-            <g class="compass" transform="translate(822 74)" aria-hidden="true">
-              <circle r="24" />
-              <path d="M0 -20 L5 0 L0 20 L-5 0 Z" />
-              <path class="compass-n" d="M0 -20 L5 0 L-5 0 Z" />
-              <text y="-30">北</text>
-            </g>
-          </svg>
+          <div class="sandtable-viewport" id="sandtable-viewport">
+            <canvas class="terrain-3d-canvas" id="terrain-3d-canvas" aria-hidden="true"></canvas>
+            <div class="terrain-3d-overlay" id="terrain-3d-overlay">
+              <div class="gl-layer gl-landmarks" id="gl-landmarks"></div>
+              <div class="gl-layer gl-movers" id="gl-movers" aria-hidden="true"></div>
+              <div class="gl-layer gl-markers" id="gl-markers"></div>
+              <div class="gl-layer gl-units" id="gl-units"></div>
+            </div>
+            <div class="sandtable-world" id="sandtable-world">
+              <div class="table-shadow" aria-hidden="true"></div>
+              <div class="table-slab" aria-hidden="true">
+                <div class="table-edge table-edge-front"></div>
+                <div class="table-edge table-edge-back"></div>
+                <div class="table-edge table-edge-left"></div>
+                <div class="table-edge table-edge-right"></div>
+              </div>
+
+              <svg class="battle-map" viewBox="0 0 880 720" role="img" aria-labelledby="map-title map-desc">
+                <title id="map-title">战役态势示意图</title>
+                <desc id="map-desc">按阶段动态推演双方部署与机动路线。</desc>
+                <defs>
+                  <filter id="roughen">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="8" result="noise" />
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" />
+                  </filter>
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                  <marker id="arrow-red" viewBox="0 0 12 12" markerWidth="14" markerHeight="14" refX="9.5" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+                    <path d="M1,1.5 L11,6 L1,10.5 L3.6,6 z" fill="#e2513f" />
+                  </marker>
+                  <marker id="arrow-enemy" viewBox="0 0 12 12" markerWidth="11" markerHeight="11" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+                    <path d="M1.5,2 L10.5,6 L1.5,10 L3.5,6 z" fill="#8aa2aa" />
+                  </marker>
+                  <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-opacity=".07" stroke-width="1" />
+                  </pattern>
+                </defs>
+
+                <g class="map-frame" aria-hidden="true">
+                  <rect x="6" y="6" width="868" height="708" rx="4" />
+                </g>
+                <g id="map-terrain" class="map-terrain"></g>
+                <g id="map-enemy-routes" class="enemy-routes" aria-hidden="true"></g>
+                <g id="map-routes" class="routes" aria-hidden="true"></g>
+                <g id="map-locations" class="locations"></g>
+                <g id="map-markers" class="map-markers" aria-label="关键战事标记"></g>
+                <g id="formation-layer" class="formation-layer" aria-label="当前阶段双方部队"></g>
+
+                <g class="compass" transform="translate(822 74)" aria-hidden="true">
+                  <circle r="24" />
+                  <path d="M0 -20 L5 0 L0 20 L-5 0 Z" />
+                  <path class="compass-n" d="M0 -20 L5 0 L-5 0 Z" />
+                  <text y="-30">北</text>
+                </g>
+              </svg>
+
+              <div class="layer-3d" id="layer-3d" aria-hidden="false">
+                <div class="layer-3d-landmarks" id="layer-3d-landmarks"></div>
+                <div class="layer-3d-movers" id="layer-3d-movers" aria-hidden="true"></div>
+                <div class="layer-3d-markers" id="layer-3d-markers"></div>
+                <div class="layer-3d-units" id="layer-3d-units"></div>
+              </div>
+            </div>
+          </div>
 
           <div class="map-tooltip" id="map-tooltip" hidden role="status"></div>
 
           <div class="map-footer">
             <div class="map-legend" aria-label="地图图例"></div>
+            <span class="map-hint" id="map-hint">拖拽旋转沙盘 · 滚轮缩放</span>
             <span class="map-scale" id="map-scale"></span>
           </div>
         </div>
@@ -289,6 +343,6 @@
       <p>地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=3"></script>
+    <script type="module" src="./app.js?v=7"></script>
   </body>
 </html>

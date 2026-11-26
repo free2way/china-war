@@ -6,7 +6,7 @@
     <meta name="description" content="战史沙盘：以三维立体交互方式推演古今中外著名战役——四渡赤水、官渡之战、长津湖战役、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
     <title>战史沙盘｜世界历史著名战役三维交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=20" />
+    <link rel="stylesheet" href="./styles.css?v=23" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
@@ -42,60 +42,13 @@
     <main id="view-home" class="view view-home">
       <section class="home-hero">
         <div class="home-hero-bg" aria-hidden="true"></div>
-        <div class="home-hero-grid">
-          <div class="home-hero-copy">
-            <p class="eyebrow"><span data-i18n="homeEyebrow">世界战争史 · 中外经典战役交互沙盘</span></p>
-            <h1 id="home-title">观<span class="accent">兵</span>形之变，<br />读胜负之机。</h1>
-            <p class="home-deck" data-i18n="homeDeck">
-              跨越古今中外，每一场著名战役都是一盘在时间与地理中展开的沙盘。选择一份战役档案，按阶段推演双方部署、机动路线与决策逻辑。
-            </p>
-            <div class="home-stats" id="home-stats"></div>
-          </div>
-
-          <aside class="home-flagship" aria-label="精选导览入口">
-            <div class="flagship-map-preview" aria-hidden="true">
-              <svg viewBox="0 0 360 210" role="presentation">
-                <defs>
-                  <linearGradient id="fs-bg" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="#192622" />
-                    <stop offset="100%" stop-color="#0f1512" />
-                  </linearGradient>
-                  <linearGradient id="fs-red" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stop-color="#ff9a5c" />
-                    <stop offset="100%" stop-color="#e2513f" />
-                  </linearGradient>
-                </defs>
-                <rect width="360" height="210" rx="10" fill="url(#fs-bg)" />
-                <path d="M18 46 Q95 28 168 58 T342 44 M18 110 Q112 88 205 118 T342 104 M18 168 Q120 148 220 176 T342 162" fill="none" stroke="rgba(232,226,210,.08)" stroke-width="1" />
-                <!-- 赤水河与乌江 -->
-                <path d="M158 14 C146 56 154 88 138 124 C126 152 134 178 120 198" fill="none" stroke="#6aa6b8" stroke-width="4.5" stroke-linecap="round" opacity=".72" />
-                <path d="M174 196 C218 176 266 184 332 194" fill="none" stroke="#6aa6b8" stroke-width="3" stroke-linecap="round" opacity=".5" />
-                <!-- 国民党军西移古蔺（蓝虚线） -->
-                <path d="M254 128 C210 112 162 84 96 64" fill="none" stroke="#7eb4d6" stroke-width="2" stroke-dasharray="5 5" opacity=".78" />
-                <circle cx="96" cy="64" r="4" fill="#7eb4d6" />
-                <!-- 三渡：茅台公开西渡 -->
-                <path d="M224 134 C194 132 168 124 142 114 C122 106 106 88 86 64" fill="none" stroke="#e2513f" stroke-width="2.4" stroke-dasharray="4 4" opacity=".52" />
-                <!-- 四渡：二郎滩秘密折返东渡南下乌江 -->
-                <path d="M88 66 C116 86 138 100 156 116 C182 138 206 154 226 182" fill="none" stroke="url(#fs-red)" stroke-width="3.6" stroke-linecap="round" />
-                <polygon points="231,187 220,183 227,175" fill="#ffb169" />
-                <circle cx="144" cy="116" r="4.5" fill="#fff" stroke="#e2513f" stroke-width="2" />
-                <circle cx="154" cy="100" r="4" fill="#ffd166" stroke="#141815" stroke-width="1.5" />
-                <text x="42" y="54" fill="#9ed4fa" font-size="10" font-family="sans-serif" data-i18n="homeSvgGulin">古蔺 · 敌重兵西移</text>
-                <text x="164" y="102" fill="#ffe29a" font-size="10" font-family="sans-serif" data-i18n="homeSvgErlang">二郎滩 · 秘密东渡</text>
-                <text x="152" y="132" fill="#f2ece0" font-size="9.5" opacity=".8" font-family="sans-serif" data-i18n="homeSvgMaotai">茅台</text>
-                <text x="234" y="188" fill="#ffb478" font-size="10" font-family="sans-serif" data-i18n="homeSvgWujiang">南渡乌江</text>
-              </svg>
-            </div>
-            <div class="flagship-copy">
-              <span class="flagship-eyebrow" data-i18n="homeFlagshipEyebrow">推荐体验 · 90 秒核心导览</span>
-              <h3 data-i18n="homeFlagshipTitle">三渡 → 四渡赤水：如何用一次佯动调开四十万大军？</h3>
-              <p data-i18n="homeFlagshipDeck">同比例同视角前后对照：看清茅台西渡如何把敌军主力吸向古蔺，主力再连夜折返二郎滩跳出合围。</p>
-              <div class="flagship-actions">
-                <button type="button" class="flagship-cta" data-tour-launch="chishui-3-4" data-i18n="homeFlagshipCta">观看三渡到四渡 →</button>
-                <button type="button" class="flagship-secondary" data-tour-launch="normandy-dday" data-i18n="homeFlagshipNormandy">诺曼底多滩对照验证 →</button>
-              </div>
-            </div>
-          </aside>
+        <div class="home-hero-copy">
+          <p class="eyebrow"><span data-i18n="homeEyebrow">世界战争史 · 中外经典战役交互沙盘</span></p>
+          <h1 id="home-title">观<span class="accent">兵</span>形之变，<br />读胜负之机。</h1>
+          <p class="home-deck" data-i18n="homeDeck">
+            跨越古今中外，每一场著名战役都是一盘在时间与地理中展开的沙盘。选择一份战役档案，按阶段推演双方部署、机动路线与决策逻辑。
+          </p>
+          <div class="home-stats" id="home-stats"></div>
         </div>
       </section>
 
@@ -498,6 +451,6 @@
       <p data-i18n="footerDisclaimer">地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=21"></script>
+    <script type="module" src="./app.js?v=23"></script>
   </body>
 </html>

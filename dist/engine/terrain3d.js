@@ -725,6 +725,7 @@ const TERRAIN_FS = `
   uniform float uSnowLevel;
   uniform float uTime;
   uniform float uGameMode;
+  uniform float uSanguoMode;
   uniform float uShowCombat;
   uniform vec2 uRedUnits[8];
   uniform vec2 uBlueUnits[8];
@@ -743,6 +744,13 @@ const TERRAIN_FS = `
     vec2 gv = dot(a, a) < dot(b, b) ? a : b;
     float d = max(abs(gv.x), dot(abs(gv), normalize(r)));
     return smoothstep(0.455, 0.495, d);
+  }
+
+  // 三国战棋经典正交方格经纬距离场
+  float squareGridEdge(vec2 p) {
+    vec2 g = abs(fract(p * vec2(26.0, 21.0) - 0.5) - 0.5);
+    float d = min(g.x, g.y);
+    return 1.0 - smoothstep(0.012, 0.042, d);
   }
 
   vec3 boostSat(vec3 c, float s) {
@@ -765,34 +773,57 @@ const TERRAIN_FS = `
     land = mix(land, uColorPeak, smoothstep(0.66, 0.94, h));
     land = mix(land, uColorRock, smoothstep(0.14, 0.44, slope) * 0.68);
 
-    // 游戏地图模式：提亮草地/林地/平原饱和度，呈现《全面战争/文明》手绘风格色阶
-    if (uGameMode > 0.5) {
+    // 三国志青绿水墨沙盘模式（专为四渡赤水定制）：石青石绿苍山 + 丹霞赭石绝壁 + 水墨皴法勾山
+    if (uSanguoMode > 0.5) {
+      vec3 sgValley = vec3(0.15, 0.31, 0.22); // 石绿深谷
+      vec3 sgMid    = vec3(0.28, 0.42, 0.25); // 苍绿松坡
+      vec3 sgHigh   = vec3(0.56, 0.39, 0.23); // 丹霞赭石山脊
+      vec3 sgPeak   = vec3(0.79, 0.73, 0.60); // 宣纸留白暖峰
+      vec3 sgCliff  = vec3(0.42, 0.26, 0.17); // 斧劈皴赤岩
+      land = mix(sgValley, sgMid, smoothstep(0.04, 0.34, h));
+      land = mix(land, sgHigh, smoothstep(0.34, 0.68, h));
+      land = mix(land, sgPeak, smoothstep(0.68, 0.95, h));
+      land = mix(land, sgCliff, smoothstep(0.13, 0.42, slope) * 0.76);
+      // 传统山水斧劈皴/披麻皴水墨笔触暗纹
+      float cun = sin(vWorldPos.x * 68.0 - vWorldPos.y * 52.0 + h * 15.0) * cos(vWorldPos.y * 82.0 + vWorldPos.x * 36.0);
+      float inkStroke = smoothstep(0.15, 0.46, slope) * smoothstep(0.12, 0.72, cun);
+      land = mix(land, vec3(0.07, 0.08, 0.07), inkStroke * 0.44);
+    } else if (uGameMode > 0.5) {
+      // 游戏地图模式：提亮草地/林地/平原饱和度，呈现《全面战争/文明》手绘风格色阶
       land = boostSat(land, 1.38) * 1.24 + vec3(0.02, 0.04, 0.02);
-      // 柔和的阶梯色带（风格化游戏手绘感）
       float band = floor(h * 10.0) / 10.0;
       land = mix(land, land * (0.90 + 0.22 * band), 0.38);
     }
 
-    // 高频地表微纹理
+    // 高频地表微纹理（宣纸纤维 / 砂砾）
     float micro = sin(vWorldPos.x * 110.0 + vWorldPos.y * 84.0) * cos(vWorldPos.y * 116.0 - vWorldPos.x * 74.0);
-    land += vec3(micro * (uGameMode > 0.5 ? 0.010 : 0.015));
+    land += vec3(micro * (uSanguoMode > 0.5 ? 0.012 : (uGameMode > 0.5 ? 0.010 : 0.015)));
 
     // 高海拔真实积雪（保留山脊阴阳光影层次不过曝）
-    if (uSnowLevel < 2.0) {
+    if (uSnowLevel < 2.0 && uSanguoMode < 0.5) {
       float snow = smoothstep(uSnowLevel - 0.10, uSnowLevel + 0.14, h - slope * 0.36);
       vec3 snowCol = uGameMode > 0.5 ? vec3(0.76, 0.85, 0.94) : vec3(0.86, 0.91, 0.97);
       land = mix(land, snowCol, snow * 0.92);
     }
 
-    // 2. 盘山公路/古驿道
+    // 2. 盘山公路 / 三国青石板古栈道
     if (road > 0.02) {
       float dash = 0.80 + 0.20 * sin((vWorldPos.x + vWorldPos.y) * 90.0);
-      vec3 roadCol = uGameMode > 0.5 ? vec3(0.95, 0.82, 0.52) : uColorRoad;
-      land = mix(land, roadCol * dash, smoothstep(0.12, 0.72, road) * (uGameMode > 0.5 ? 0.88 : 0.78));
+      vec3 roadCol = uSanguoMode > 0.5
+        ? vec3(0.88, 0.76, 0.52)
+        : (uGameMode > 0.5 ? vec3(0.95, 0.82, 0.52) : uColorRoad);
+      land = mix(land, roadCol * dash, smoothstep(0.12, 0.72, road) * (uSanguoMode > 0.5 ? 0.90 : (uGameMode > 0.5 ? 0.88 : 0.78)));
     }
 
-    // 3. 写实双层等高线 vs 游戏六边形战术网格
-    if (uGameMode > 0.5) {
+    // 3. 三国战棋方格经纬 + 水墨勾山线 vs 游戏六边形网格 vs 写实等高线
+    if (uSanguoMode > 0.5) {
+      float sgGrid = squareGridEdge(vUv);
+      float flatMask = (1.0 - smoothstep(0.18, 0.42, slope)) * (1.0 - water * 0.85);
+      land = mix(land, vec3(0.88, 0.75, 0.46), sgGrid * 0.24 * flatMask);
+      float inkPhase = fract(h * 14.0);
+      float inkLine = 1.0 - smoothstep(0.0, 0.042, min(inkPhase, 1.0 - inkPhase));
+      land = mix(land, vec3(0.08, 0.09, 0.08), inkLine * 0.32 * (1.0 - water));
+    } else if (uGameMode > 0.5) {
       float hx = hexEdge(vUv);
       land = mix(land, land * 1.22 + vec3(0.08, 0.09, 0.07), hx * 0.26 * (1.0 - water * 0.5));
     } else {
@@ -803,27 +834,43 @@ const TERRAIN_FS = `
       land = mix(land, land * 1.24 + vec3(0.045), (minorC * 0.16 + majorC * 0.30) * (1.0 - water));
     }
 
-    // 4. 水域 / 冰湖 / 风格化海浪与泡沫岸线
-    vec3 wShallow = uGameMode > 0.5 ? mix(uColorWater * 1.35, vec3(0.18, 0.68, 0.82), 0.45) : uColorWater;
-    vec3 wDeep = uGameMode > 0.5 ? mix(uColorWaterDeep * 1.25, vec3(0.08, 0.34, 0.56), 0.45) : uColorWaterDeep;
+    // 4. 水域：三国赤水丹砂琥珀河水与水墨波纹 vs 游戏海浪 vs 写实水域
+    vec3 wShallow = uSanguoMode > 0.5
+      ? vec3(0.68, 0.36, 0.20)
+      : (uGameMode > 0.5 ? mix(uColorWater * 1.35, vec3(0.18, 0.68, 0.82), 0.45) : uColorWater);
+    vec3 wDeep = uSanguoMode > 0.5
+      ? vec3(0.38, 0.17, 0.11)
+      : (uGameMode > 0.5 ? mix(uColorWaterDeep * 1.25, vec3(0.08, 0.34, 0.56), 0.45) : uColorWaterDeep);
     vec3 waterCol = mix(wShallow, wDeep, smoothstep(0.36, 0.96, water));
-    float ripple = sin(vWorldPos.x * 32.0 + uTime * 1.5) * cos(vWorldPos.y * 28.0 - uTime * 1.1) * (uGameMode > 0.5 ? 0.042 : 0.028);
+    float ripple = sin(vWorldPos.x * 32.0 + uTime * 1.5) * cos(vWorldPos.y * 28.0 - uTime * 1.1) * (uSanguoMode > 0.5 ? 0.036 : (uGameMode > 0.5 ? 0.042 : 0.028));
     float shoreline = smoothstep(0.14, 0.34, water) * (1.0 - smoothstep(0.34, 0.64, water));
     float foamWave = 0.65 + 0.35 * sin(uTime * 2.4 + water * 18.0);
     vec3 baseCol = mix(land, waterCol + ripple, smoothstep(0.16, 0.58, water));
-    baseCol += (uGameMode > 0.5 ? vec3(0.45, 0.62, 0.70) * foamWave : vec3(0.20, 0.26, 0.30)) * shoreline * 0.72;
+    vec3 shoreCol = uSanguoMode > 0.5
+      ? vec3(0.86, 0.76, 0.56) * foamWave
+      : (uGameMode > 0.5 ? vec3(0.45, 0.62, 0.70) * foamWave : vec3(0.20, 0.26, 0.30));
+    baseCol += shoreCol * shoreline * 0.72;
 
-    // 5. 光照模型（写实斜阳 vs 游戏明媚日光 + 飘动云影）
+    // 5. 光照模型（三国暖金斜阳与峡谷流云 vs 游戏明媚日光 vs 写实斜阳）
     float diff = max(dot(N, L), 0.0);
     float fill = max(dot(N, normalize(vec3(-0.65, -0.45, 0.55))), 0.0) * 0.32;
     float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0) * (0.26 + 0.42 * h);
     float ao = 0.54 + 0.46 * smoothstep(0.0, 0.50, h);
 
     vec3 lit;
-    if (uGameMode > 0.5) {
+    if (uSanguoMode > 0.5) {
+      float sgDiff = mix(diff, smoothstep(0.10, 0.80, diff), 0.48);
+      vec3 sgSun = vec3(1.20, 1.04, 0.80);
+      vec3 sgSky = vec3(0.54, 0.64, 0.60);
+      lit = baseCol * (sgSky * 0.44 + sgSun * sgDiff * 0.96 + sgSky * fill) * ao;
+      lit += vec3(0.56, 0.48, 0.34) * rim * (1.0 - water * 0.45);
+      // 赤水峡谷低处流动的淡宣纸云雾（三国志山川云气）
+      float mistNoise = 0.5 + 0.5 * sin(vWorldPos.x * 4.6 + uTime * 0.28) * cos(vWorldPos.y * 3.9 - uTime * 0.21);
+      float valleyMist = (1.0 - smoothstep(0.06, 0.40, h)) * (1.0 - water * 0.55) * smoothstep(0.32, 0.86, mistNoise);
+      lit = mix(lit, vec3(0.84, 0.80, 0.70), valleyMist * 0.24);
+    } else if (uGameMode > 0.5) {
       // 风格化游戏半卡通高光阶梯 + 晴空天蓝阴坡补光
       float toonDiff = mix(diff, smoothstep(0.12, 0.82, diff), 0.55);
-      // 缓慢掠过山脉的柔软云影
       float cloud = sin(vWorldPos.x * 2.4 + uTime * 0.22) * cos(vWorldPos.y * 2.1 - uTime * 0.16);
       float cloudShadow = 0.88 + 0.12 * smoothstep(-0.3, 0.6, cloud);
       vec3 gameSun = vec3(1.18, 1.09, 0.94);
@@ -840,8 +887,9 @@ const TERRAIN_FS = `
 
     // 水面与冰面太阳镜面高光
     vec3 H = normalize(L + V);
-    float spec = pow(max(dot(N, H), 0.0), uGameMode > 0.5 ? 28.0 : 42.0);
-    lit += vec3(0.82, 0.92, 1.0) * spec * (water * (uGameMode > 0.5 ? 0.85 : 0.62) + 0.05);
+    float spec = pow(max(dot(N, H), 0.0), (uGameMode > 0.5 || uSanguoMode > 0.5) ? 28.0 : 42.0);
+    vec3 specTint = uSanguoMode > 0.5 ? vec3(1.0, 0.86, 0.62) : vec3(0.82, 0.92, 1.0);
+    lit += specTint * spec * (water * ((uGameMode > 0.5 || uSanguoMode > 0.5) ? 0.82 : 0.62) + 0.05);
 
     // 6. 实时阵营控制区热力染色 + 双方交锋动态战线光带
     if (uShowCombat > 0.5 && (uRedCount > 0 || uBlueCount > 0)) {
@@ -861,9 +909,11 @@ const TERRAIN_FS = `
       if (totalInf > 0.14) {
         float redDom = smoothstep(0.06, 0.55, redInf - blueInf) * smoothstep(0.14, 0.65, redInf);
         float blueDom = smoothstep(0.06, 0.55, blueInf - redInf) * smoothstep(0.14, 0.65, blueInf);
-        float tintStr = (uGameMode > 0.5 ? 0.24 : 0.15) * (1.0 - water * 0.65);
-        lit = mix(lit, mix(lit, uAccentColor * 1.15, 0.65), redDom * tintStr);
-        lit = mix(lit, mix(lit, uOpposingColor * 1.15, 0.65), blueDom * tintStr);
+        float tintStr = (uSanguoMode > 0.5 ? 0.28 : (uGameMode > 0.5 ? 0.24 : 0.15)) * (1.0 - water * 0.65);
+        vec3 redCol = uSanguoMode > 0.5 ? vec3(0.82, 0.19, 0.14) : uAccentColor * 1.15;
+        vec3 blueCol = uSanguoMode > 0.5 ? vec3(0.24, 0.44, 0.66) : uOpposingColor * 1.15;
+        lit = mix(lit, mix(lit, redCol, 0.68), redDom * tintStr);
+        lit = mix(lit, mix(lit, blueCol, 0.68), blueDom * tintStr);
 
         // 敌我势力交界处：动态闪烁战线火光带
         float contest = min(redInf, blueInf);
@@ -875,8 +925,10 @@ const TERRAIN_FS = `
 
     // 远景大气空气透视
     float dist = length(uEyePos - vWorldPos);
-    float fog = smoothstep(3.0, 6.0, dist) * (uGameMode > 0.5 ? 0.24 : 0.35);
-    vec3 fogCol = uGameMode > 0.5 ? mix(uFogColor * 1.8, vec3(0.16, 0.24, 0.34), 0.5) : uFogColor;
+    float fog = smoothstep(3.0, 6.0, dist) * (uSanguoMode > 0.5 ? 0.26 : (uGameMode > 0.5 ? 0.24 : 0.35));
+    vec3 fogCol = uSanguoMode > 0.5
+      ? vec3(0.20, 0.18, 0.14)
+      : (uGameMode > 0.5 ? mix(uFogColor * 1.8, vec3(0.16, 0.24, 0.34), 0.5) : uFogColor);
     lit = mix(lit, fogCol, fog);
 
     // 柔和胶片色调映射，防止高亮雪峰过曝丢细节
@@ -906,15 +958,24 @@ const SKIRT_FS = `
   uniform vec3 uSkirtTop;
   uniform vec3 uSkirtBottom;
   uniform float uGameMode;
+  uniform float uSanguoMode;
   void main() {
     float t = smoothstep(-0.22, 0.28, vZ);
-    vec3 topC = uGameMode > 0.5 ? mix(uSkirtTop * 1.35, vec3(0.48, 0.35, 0.20), 0.45) : uSkirtTop;
-    vec3 botC = uGameMode > 0.5 ? vec3(0.14, 0.10, 0.07) : uSkirtBottom;
+    vec3 topC = uSanguoMode > 0.5
+      ? vec3(0.32, 0.18, 0.11)
+      : (uGameMode > 0.5 ? mix(uSkirtTop * 1.35, vec3(0.48, 0.35, 0.20), 0.45) : uSkirtTop);
+    vec3 botC = uSanguoMode > 0.5
+      ? vec3(0.10, 0.06, 0.04)
+      : (uGameMode > 0.5 ? vec3(0.14, 0.10, 0.07) : uSkirtBottom);
     vec3 col = mix(botC, topC, t) * vShade;
     float strata = smoothstep(0.90, 1.0, abs(sin(vZ * 58.0)));
-    col += vec3(uGameMode > 0.5 ? 0.06 : 0.045) * strata;
-    // 游戏模式底部木质/铜边描金线
-    if (uGameMode > 0.5) {
+    col += vec3((uGameMode > 0.5 || uSanguoMode > 0.5) ? 0.055 : 0.045) * strata;
+    // 紫檀/乌木案几描金双铜线底座
+    if (uSanguoMode > 0.5) {
+      float rimUpper = smoothstep(0.014, 0.0, abs(vZ + 0.04));
+      float rimLower = smoothstep(0.020, 0.0, abs(vZ + 0.19));
+      col = mix(col, vec3(0.88, 0.70, 0.34), max(rimUpper * 0.68, rimLower * 0.92));
+    } else if (uGameMode > 0.5) {
       float brass = smoothstep(0.018, 0.0, abs(vZ + 0.19));
       col = mix(col, vec3(0.84, 0.66, 0.32), brass * 0.85);
     }
@@ -1196,6 +1257,7 @@ export class Terrain3DEngine {
 
   loadBattle(battle) {
     if (!this.ready) return;
+    this.battleId = battle.id;
     this.profile = getTerrainProfile(battle.id);
     const gl = this.gl;
 
@@ -1437,7 +1499,9 @@ export class Terrain3DEngine {
   }
 
   setRenderStyle(style) {
-    this.renderStyle = style === "realistic" ? "realistic" : "game";
+    if (style === "sanguo") this.renderStyle = "sanguo";
+    else if (style === "realistic") this.renderStyle = "realistic";
+    else this.renderStyle = "game";
   }
 
   // 在重要城池、关隘、渡口上生成真实 3D 微缩建筑模型（城墙底座 + 箭楼主塔 + 屋顶）
@@ -1489,7 +1553,56 @@ export class Terrain3DEngine {
       tri(x0, y1, z0, x0, y0, z0, cx, cy, zPeak, 0.78);
     };
 
+    const isChishuiSanguo = this.battleId === "chishui-1935" && this.renderStyle === "sanguo";
     locations.forEach((loc) => {
+      if (isChishuiSanguo && (loc.kind === "capital" || loc.kind === "city" || loc.kind === "fortress" || loc.kind === "ford")) {
+        const [wx, wy] = this.mapToWorldXY(loc.x, loc.y);
+        const wz = this.sampleElevation(loc.x, loc.y) - 0.008;
+        const greyBrick = [0.46, 0.44, 0.41];
+        const rammedEarth = [0.60, 0.52, 0.40];
+        const vermilion = [0.74, 0.24, 0.18];
+        const darkTile = [0.22, 0.25, 0.27];
+        const goldRoof = [0.84, 0.64, 0.26];
+
+        if (loc.kind === "capital" || loc.kind === "city") {
+          // 三国志城池：四面合围青砖夯土城垣 + 四隅角楼 + 中央朱漆飞檐城楼（遵义、贵阳、昆明）
+          const isCap = loc.kind === "capital";
+          const r = isCap ? 0.044 : 0.036;
+          const t = 0.0065;
+          const wallH = isCap ? 0.026 : 0.022;
+          pushBox(wx, wy, wz, wz + 0.008, r * 1.06, r * 1.06, rammedEarth);
+          pushBox(wx, wy - r + t, wz + 0.006, wz + wallH, r, t, greyBrick);
+          pushBox(wx, wy + r - t, wz + 0.006, wz + wallH, r, t, greyBrick);
+          pushBox(wx - r + t, wy, wz + 0.006, wz + wallH, t, r, greyBrick);
+          pushBox(wx + r - t, wy, wz + 0.006, wz + wallH, t, r, greyBrick);
+          // 南门朱漆瓮城门楼
+          pushBox(wx, wy - r + t * 0.8, wz + wallH, wz + wallH + 0.014, 0.013, 0.009, vermilion);
+          pushPyramid(wx, wy - r + t * 0.8, wz + wallH + 0.014, wz + wallH + 0.025, 0.017, 0.012, darkTile);
+          // 城心主殿/衙署重檐高台
+          const keepH = isCap ? 0.048 : 0.038;
+          pushBox(wx, wy, wz + 0.008, wz + keepH, r * 0.46, r * 0.38, vermilion);
+          pushPyramid(wx, wy, wz + keepH, wz + keepH + (isCap ? 0.026 : 0.020), r * 0.64, r * 0.54, isCap ? goldRoof : darkTile);
+          return;
+        }
+        if (loc.kind === "fortress") {
+          // 雄关险隘（娄山关）：双侧夹山敌楼石阙 + 横跨关墙 + 飞檐箭楼
+          const span = 0.038;
+          pushBox(wx, wy, wz, wz + 0.024, span, 0.011, greyBrick);
+          pushBox(wx - span * 0.72, wy, wz, wz + 0.038, 0.011, 0.013, greyBrick);
+          pushBox(wx + span * 0.72, wy, wz, wz + 0.038, 0.011, 0.013, greyBrick);
+          pushBox(wx, wy, wz + 0.024, wz + 0.046, 0.015, 0.013, vermilion);
+          pushPyramid(wx, wy, wz + 0.046, wz + 0.066, 0.021, 0.018, [0.80, 0.28, 0.20]);
+          return;
+        }
+        if (loc.kind === "ford") {
+          // 赤水古渡（茅台、太平渡、二郎滩、土城、元厚、乌江）：木质浮桥栈道 + 临江望楼
+          pushBox(wx, wy, wz, wz + 0.010, 0.026, 0.009, [0.56, 0.39, 0.22]);
+          pushBox(wx + 0.012, wy + 0.008, wz + 0.008, wz + 0.028, 0.009, 0.009, vermilion);
+          pushPyramid(wx + 0.012, wy + 0.008, wz + 0.028, wz + 0.040, 0.013, 0.013, darkTile);
+          return;
+        }
+      }
+
       if (loc.kind !== "capital" && loc.kind !== "fortress" && loc.kind !== "city") return;
       const [wx, wy] = this.mapToWorldXY(loc.x, loc.y);
       const wz = this.sampleElevation(loc.x, loc.y) - 0.008;
@@ -1774,10 +1887,12 @@ export class Terrain3DEngine {
     gl.uniform3fv(gl.getUniformLocation(this.terrainProg, "uLightDir"), [0.62, 0.36, 0.68]);
     gl.uniform3fv(gl.getUniformLocation(this.terrainProg, "uEyePos"), this.eyePos);
     const isGame = this.renderStyle === "game" ? 1.0 : 0.0;
+    const isSanguo = this.renderStyle === "sanguo" ? 1.0 : 0.0;
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uContourStep"), this.profile.contourStep);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uSnowLevel"), this.profile.snowLevel);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uTime"), timeSec);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uGameMode"), isGame);
+    gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uSanguoMode"), isSanguo);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uShowCombat"), showCombat ? 1.0 : 0.0);
     gl.uniform2fv(gl.getUniformLocation(this.terrainProg, "uRedUnits"), this.redUnitsFlat);
     gl.uniform2fv(gl.getUniformLocation(this.terrainProg, "uBlueUnits"), this.blueUnitsFlat);
@@ -1802,6 +1917,7 @@ export class Terrain3DEngine {
       gl.uniform3fv(gl.getUniformLocation(this.skirtProg, "uSkirtTop"), pal.skirtTop);
       gl.uniform3fv(gl.getUniformLocation(this.skirtProg, "uSkirtBottom"), pal.skirtBottom);
       gl.uniform1f(gl.getUniformLocation(this.skirtProg, "uGameMode"), isGame);
+      gl.uniform1f(gl.getUniformLocation(this.skirtProg, "uSanguoMode"), isSanguo);
       gl.drawArrays(gl.TRIANGLES, 0, this.skirtBuf.count);
     }
 

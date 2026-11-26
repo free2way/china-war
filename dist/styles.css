@@ -1926,6 +1926,250 @@ body[data-theme="sinai-desert-ochre"] .map-stage[data-map-style="game"] {
   border: 2px solid #ffe59c;
   box-shadow: 0 6px 18px rgba(0,0,0,.55), 0 0 22px var(--accent-bright);
 }
+
+/* 默认隐藏三国专属挂件，确保其余五场战役 100% 保持原貌 */
+.gl-sanguo-pennant,
+.gl-sanguo-seal {
+  display: none;
+}
+
+/* ================ 四渡赤水专属：三国志策略沙盘风格 (data-map-style="sanguo") ================ */
+.map-stage[data-map-style="sanguo"] {
+  background:
+    radial-gradient(86% 62% at 50% 14%, rgba(218, 174, 96, .24), transparent 64%),
+    radial-gradient(64% 52% at 50% 86%, rgba(46, 88, 68, .22), transparent 72%),
+    linear-gradient(180deg, #211b13 0%, #16130e 58%, #0d0b08 100%);
+  border: 1.5px solid rgba(218, 176, 98, .54);
+  box-shadow:
+    inset 0 0 0 3px rgba(18, 14, 10, .86),
+    inset 0 0 0 4px rgba(214, 172, 92, .24),
+    inset 0 0 84px rgba(8, 6, 4, .65),
+    0 36px 90px rgba(0,0,0,.58);
+}
+
+/* 沙盘四角青铜错金回纹护角 */
+.map-stage[data-map-style="sanguo"] .stage-reticle span {
+  width: 22px;
+  height: 22px;
+  border-color: rgba(226, 184, 102, .72);
+  border-width: 2px;
+}
+
+/* 2D 平面在三国模式下同步化作古绢舆图 */
+.map-stage[data-map-style="sanguo"].is-2d {
+  background:
+    radial-gradient(75% 65% at 50% 45%, rgba(232, 214, 176, .12), transparent 75%),
+    linear-gradient(180deg, #241e15 0%, #1a150f 100%);
+}
+.map-stage[data-map-style="sanguo"] .region-labels text {
+  fill: rgba(234, 206, 148, .12);
+  font-weight: 700;
+}
+
+/* 三国城池 / 雄关 / 古渡：乌木金边官印牌匾（城 / 关 / 渡） */
+.map-stage[data-map-style="sanguo"] .gl-landmark.is-major {
+  padding: 2px 9px 2px 3px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(30, 22, 15, .94), rgba(15, 11, 8, .96));
+  border: 1px solid rgba(218, 176, 96, .66);
+  box-shadow: 0 5px 14px rgba(0,0,0,.65), inset 0 1px 0 rgba(255, 236, 190, .22);
+}
+.map-stage[data-map-style="sanguo"] .gl-landmark.is-major .gl-landmark-icon {
+  display: none;
+}
+.map-stage[data-map-style="sanguo"] .gl-landmark.is-major .gl-sanguo-seal {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 2px;
+  font: 700 10.5px/1 var(--serif);
+  color: #fff6e5;
+  background: linear-gradient(180deg, #b83224, #7c1b12);
+  border: 1px solid rgba(246, 208, 132, .78);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+}
+.map-stage[data-map-style="sanguo"] .gl-landmark.gl-loc-ford .gl-sanguo-seal {
+  background: linear-gradient(180deg, #2f6c62, #1b423c);
+}
+.map-stage[data-map-style="sanguo"] .gl-landmark.gl-loc-fortress .gl-sanguo-seal {
+  background: linear-gradient(180deg, #9c5b1e, #63360d);
+}
+.map-stage[data-map-style="sanguo"] .gl-landmark.is-major.is-key {
+  background: linear-gradient(180deg, rgba(66, 38, 16, .96), rgba(28, 16, 8, .98));
+  border-color: #f5cd74;
+  box-shadow: 0 6px 16px rgba(0,0,0,.68), 0 0 14px rgba(245, 205, 116, .42);
+}
+.map-stage[data-map-style="sanguo"] .gl-landmark-name {
+  font-family: var(--serif);
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #f8edd6;
+}
+
+/* 三国战旗立体棋子：红漆描金帅旗 + 迎风燕尾战旗 + 青铜虎符底座 */
+@keyframes sanguo-flag-wave {
+  0%, 100% { transform: perspective(120px) rotateY(0deg) skewY(0deg); }
+  50% { transform: perspective(120px) rotateY(-14deg) skewY(-2.6deg); }
+}
+
+.map-stage[data-map-style="sanguo"] .gl-unit {
+  margin-top: -66px;
+}
+.map-stage[data-map-style="sanguo"] .gl-unit-stem {
+  display: none;
+}
+.map-stage[data-map-style="sanguo"] .gl-sanguo-pennant {
+  position: relative;
+  display: block;
+  width: 40px;
+  height: 38px;
+  margin-top: -1px;
+  margin-left: 12px;
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,.68));
+  pointer-events: none;
+}
+.map-stage[data-map-style="sanguo"] .gl-sanguo-flag-svg {
+  width: 40px;
+  height: 38px;
+  overflow: visible;
+  transform-origin: 8px 14px;
+  animation: sanguo-flag-wave 2.6s ease-in-out infinite;
+}
+.map-stage[data-map-style="sanguo"] .gl-unit:nth-child(even) .gl-sanguo-flag-svg {
+  animation-delay: -1.2s;
+}
+.map-stage[data-map-style="sanguo"] .sg-flag-cloth {
+  fill: #be291e;
+}
+.map-stage[data-map-style="sanguo"] .sg-flag-trim {
+  stroke: #f3cc76;
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .sg-flag-cloth {
+  fill: #244866;
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .sg-flag-trim {
+  stroke: #b8d6ec;
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .sg-flag-pole {
+  stroke: #b6cad8;
+}
+.map-stage[data-map-style="sanguo"] .gl-sanguo-glyph {
+  position: absolute;
+  left: 12px;
+  top: 5px;
+  width: 17px;
+  text-align: center;
+  font: 700 11.5px/1 var(--serif);
+  font-style: normal;
+  color: #fff6dc;
+  text-shadow: 0 1px 3px rgba(0,0,0,.92);
+  animation: sanguo-flag-wave 2.6s ease-in-out infinite;
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-sanguo-glyph {
+  color: #eef7ff;
+}
+
+/* 三国战棋青铜圆盘底座 */
+.map-stage[data-map-style="sanguo"] .gl-unit-foot {
+  width: 18px;
+  height: 8px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #f5cf7b 0%, #a83224 62%, #42120c 100%);
+  border: 1.5px solid #f2ca74;
+  box-shadow: 0 3px 8px rgba(0,0,0,.78), 0 0 12px rgba(226, 81, 63, .48);
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-unit-foot {
+  background: radial-gradient(circle at 50% 35%, #d6ecfb 0%, #2b5678 62%, #102334 100%);
+  border-color: #aacde6;
+  box-shadow: 0 3px 8px rgba(0,0,0,.78), 0 0 10px rgba(96, 158, 206, .42);
+}
+
+/* 三国木牍金漆番号牌 + 兵力士气槽 */
+.map-stage[data-map-style="sanguo"] .gl-unit-card {
+  position: relative;
+  padding: 3px 9px 6px 4px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #4b1510 0%, #260a08 100%);
+  border: 1px solid #e6be6c;
+  border-left: 3px solid #f5cf78;
+  box-shadow: 0 8px 18px rgba(0,0,0,.68), inset 0 1px 0 rgba(255, 236, 190, .28);
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-unit-card {
+  background: linear-gradient(180deg, #183247 0%, #0d1c29 100%);
+  border-color: #96bfd9;
+  border-left: 3px solid #cbe4f6;
+  box-shadow: 0 8px 18px rgba(0,0,0,.66), inset 0 1px 0 rgba(214, 238, 255, .24);
+}
+.map-stage[data-map-style="sanguo"] .gl-unit-label {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  color: #fff5df;
+}
+.map-stage[data-map-style="sanguo"] .gl-unit-badge {
+  width: 19px;
+  height: 19px;
+  border-radius: 2px;
+  border: 1px solid rgba(248, 214, 140, .55);
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-unit-badge {
+  border-color: rgba(186, 220, 245, .5);
+}
+.map-stage[data-map-style="sanguo"] .gl-unit-card::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: 2px;
+  height: 2px;
+  background: linear-gradient(90deg, #f6d078 0%, #df4b38 var(--hp, 84%), rgba(0,0,0,.6) var(--hp, 84%));
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-unit-card::after {
+  background: linear-gradient(90deg, #9ad8f8 0%, #4b8ec2 var(--hp, 84%), rgba(0,0,0,.6) var(--hp, 84%));
+}
+
+/* 非本幕焦点部队：收起顶部文字牌避免遮挡，但保留挺立飘扬的单字战旗棋子！ */
+.map-stage[data-map-style="sanguo"] .gl-unit.is-breathing-dot .gl-sanguo-pennant {
+  transform: scale(.82);
+  transform-origin: 8px 38px;
+  opacity: .9;
+  transition: transform .22s ease, opacity .22s ease;
+}
+.map-stage[data-map-style="sanguo"] .gl-unit.is-breathing-dot:hover .gl-sanguo-pennant,
+.map-stage[data-map-style="sanguo"] .gl-unit.is-breathing-dot:focus-visible .gl-sanguo-pennant,
+.map-stage[data-map-style="sanguo"].is-zoomed-in .gl-unit.is-breathing-dot .gl-sanguo-pennant {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* 三国烽火战事菱形令旗徽章 */
+.map-stage[data-map-style="sanguo"] .gl-marker-orb {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  transform: rotate(45deg);
+  border: 1.8px solid #f5cf78;
+  background: linear-gradient(135deg, #c93824, #68140c);
+  box-shadow: 0 6px 18px rgba(0,0,0,.7), 0 0 20px rgba(236, 118, 48, .8);
+  animation: none;
+}
+.map-stage[data-map-style="sanguo"] .gl-marker-orb > * {
+  transform: rotate(-45deg);
+}
+
+/* 三国战报卷轴式过场横幅与实况边框 */
+.map-stage[data-map-style="sanguo"] .live-commentary {
+  background: linear-gradient(180deg, rgba(26, 20, 14, .92), rgba(15, 12, 9, .94));
+  border-color: rgba(218, 176, 98, .44);
+}
+.map-stage[data-map-style="sanguo"] .cinematic-banner {
+  background: linear-gradient(90deg, transparent, rgba(32, 20, 12, .94) 18%, rgba(44, 24, 14, .96) 50%, rgba(32, 20, 12, .94) 82%, transparent);
+  border-top: 1px solid rgba(232, 190, 106, .58);
+  border-bottom: 1px solid rgba(232, 190, 106, .58);
+}
 .map-frame rect { fill: none; stroke: var(--line-dark); stroke-dasharray: 2 6; }
 
 .terrain-region { fill: rgba(232, 226, 210, .035); stroke: rgba(232, 226, 210, .14); stroke-width: 1.2; }

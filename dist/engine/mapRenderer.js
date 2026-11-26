@@ -2,8 +2,8 @@
 // 支持真实起伏地形与实时软阴影、实体 3D 森林与城池关隘、分时代不同军装 3D 立体小人方阵/骑兵/坦克、
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
-import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=24";
-import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=8";
+import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=25";
+import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=25";
 import { VoiceNarrator } from "./voiceNarrator.js?v=3";
 import { getPhaseTurnScript } from "../data/turnScripts.js?v=2";
 import { makeEventId, getEventMeta, getDefaultPrecision, getPhaseSceneCount } from "../data/eventMeta.js?v=5";
@@ -320,6 +320,42 @@ function get3DLandmarkIconSvg(kind) {
   </svg>`;
 }
 
+// 四渡赤水专属：三国志风格单字书法帅旗/将旗徽记
+const CHISHUI_SANGUO_GLYPHS = {
+  "red-command": "帅",
+  "red-1": "一",
+  "red-3": "三",
+  "red-5": "五",
+  "red-9": "九",
+  "red-decoy": "疑",
+  cadre: "干",
+  sichuan: "川",
+  "central-zhou": "周",
+  "central-wu": "吴",
+  yunnan: "滇",
+  guizhou: "黔"
+};
+
+function getSanguoBannerGlyph(unitId, unit) {
+  if (CHISHUI_SANGUO_GLYPHS[unitId]) return CHISHUI_SANGUO_GLYPHS[unitId];
+  const raw = (unit?._rawLabel || unit?.label || "").trim();
+  if (/军委|指挥|总/.test(raw)) return "帅";
+  if (/佯动|疑/.test(raw)) return "疑";
+  const numMatch = raw.match(/([一二三四五六七八九1-9])/);
+  if (numMatch) {
+    const map = { "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "7": "七", "8": "八", "9": "九" };
+    return map[numMatch[1]] || numMatch[1];
+  }
+  return raw.charAt(0) || (unit?.side === "red" ? "红" : "军");
+}
+
+function getSanguoLandmarkSeal(kind) {
+  if (kind === "fortress") return "关";
+  if (kind === "ford") return "渡";
+  if (kind === "capital" || kind === "city") return "城";
+  return "";
+}
+
 export class MapRenderer {
   constructor(stageEl) {
     this.stageEl = stageEl;
@@ -462,13 +498,18 @@ export class MapRenderer {
             this.focusCameraOnPhase(this.battle.phases[this.currentPhase], this.currentPhase);
           }
         } else if (action === "toggle-style") {
-          const isGame = this.stageEl.dataset.mapStyle !== "realistic";
-          const next = isGame ? "realistic" : "game";
-          this.stageEl.dataset.mapStyle = next;
-          this.terrain3d.setRenderStyle(next);
-          btn.classList.toggle("is-active", next === "game");
-          btn.setAttribute("aria-pressed", String(next === "game"));
-          btn.textContent = next === "game" ? t("btnStyleGame") : t("btnStyleRealistic");
+          const cur = this.stageEl.dataset.mapStyle || "game";
+          const isChishui = this.battle?.id === "chishui-1935";
+          const next = isChishui
+            ? cur === "sanguo"
+              ? "game"
+              : cur === "game"
+                ? "realistic"
+                : "sanguo"
+            : cur === "realistic"
+              ? "game"
+              : "realistic";
+          this.applyMapStyle(next, { rebuildFortresses: isChishui });
         } else if (action === "reset") {
           this.cam = this.viewMode === "3d" ? { ...DEFAULT_CAM_3D } : { ...DEFAULT_CAM_2D };
           this.applyCamera();
@@ -753,12 +794,29 @@ export class MapRenderer {
     this.viewportEl.style.setProperty("--pan-y", `${this.cam.panY}px`);
   }
 
-  refreshLanguage() {
+  applyMapStyle(style, { rebuildFortresses = false } = {}) {
+    const next = style === "sanguo" || style === "realistic" ? style : "game";
+    this.stageEl.dataset.mapStyle = next;
+    this.terrain3d.setRenderStyle(next);
+    if (rebuildFortresses && this.terrain3d.ready && this.battle) {
+      this.terrain3d.buildFortresses(this.battle.mapConfig?.locations || []);
+    }
     const styleBtn = this.stageEl.querySelector('[data-cam-action="toggle-style"]');
     if (styleBtn) {
-      const isGame = this.stageEl.dataset.mapStyle !== "realistic";
-      styleBtn.textContent = isGame ? t("btnStyleGame") : t("btnStyleRealistic");
+      const active = next !== "realistic";
+      styleBtn.classList.toggle("is-active", active);
+      styleBtn.setAttribute("aria-pressed", String(active));
+      styleBtn.textContent =
+        next === "sanguo"
+          ? t("btnStyleSanguo")
+          : next === "game"
+            ? t("btnStyleGame")
+            : t("btnStyleRealistic");
     }
+  }
+
+  refreshLanguage() {
+    this.applyMapStyle(this.stageEl.dataset.mapStyle || "game");
     const expandBtn = this.stageEl.querySelector("#stage-expand-btn");
     if (expandBtn) {
       const expanded = this.stageEl.closest(".sandtable")?.classList.contains("is-expanded");
@@ -791,6 +849,8 @@ export class MapRenderer {
     this.phaseRenderedIndex = -1;
     this.forceFilter = "all";
     this.activeComparePairs = [];
+    // 四渡赤水默认启用定制「三国沙盘」风格，其余战役保持原有策略游戏风互不干扰
+    this.applyMapStyle(battle.id === "chishui-1935" ? "sanguo" : "game");
     if (this.glCompareSvgEl) {
       this.glCompareSvgEl.innerHTML = "";
       this._glCompareEmpty = true;
@@ -1507,15 +1567,27 @@ export class MapRenderer {
     if (!this.glLandmarksEl) return;
     this.glLandmarksEl.innerHTML = "";
     this.glLandmarks = [];
+    const isChishui = this.battle?.id === "chishui-1935";
     locations.forEach((loc) => {
-      const isMajor = loc.kind === "capital" || loc.kind === "fortress" || loc.kind === "ford";
+      const isMajor =
+        loc.kind === "capital" ||
+        loc.kind === "fortress" ||
+        loc.kind === "ford" ||
+        (isChishui && loc.kind === "city");
+      const sealChar = getSanguoLandmarkSeal(loc.kind);
       const el = document.createElement("button");
       el.type = "button";
       el.className = `gl-landmark ${loc.kind ? `gl-loc-${loc.kind}` : ""} ${isMajor ? "is-major" : ""}`;
       el.dataset.place = loc.name;
       el.setAttribute("aria-label", `${loc.name}${loc.sub ? `：${loc.sub}` : ""}`);
       el.innerHTML = `
-        ${isMajor ? `<span class="gl-landmark-icon">${get3DLandmarkIconSvg(loc.kind)}</span>` : `<span class="gl-landmark-dot"></span>`}
+        ${
+          isMajor
+            ? `<span class="gl-landmark-icon">${get3DLandmarkIconSvg(loc.kind)}</span>${
+                sealChar ? `<span class="gl-sanguo-seal" aria-hidden="true">${sealChar}</span>` : ""
+              }`
+            : `<span class="gl-landmark-dot"></span>`
+        }
         <span class="gl-landmark-name">${loc.name}</span>
       `;
       const showInfo = (event) => {
@@ -1554,6 +1626,16 @@ export class MapRenderer {
             <strong class="gl-unit-label"></strong>
             <small class="gl-unit-sub"></small>
           </span>
+        </span>
+        <span class="gl-sanguo-pennant" aria-hidden="true">
+          <svg class="gl-sanguo-flag-svg" viewBox="0 0 42 46">
+            <path class="sg-flag-pole" d="M8 4V45" stroke="#d8b668" stroke-width="2.2" stroke-linecap="round"/>
+            <polygon class="sg-flag-spear" points="8,0 5.2,5.6 10.8,5.6" fill="#f7de94"/>
+            <circle cx="8" cy="6.2" r="2.1" fill="#c93b2b"/>
+            <path class="sg-flag-cloth" d="M9.2 6.2 C18 4.4, 29 8.2, 39.5 6.8 L34.2 15.2 L39.5 23.6 C29 25.0, 18 21.2, 9.2 23.2 Z"/>
+            <path class="sg-flag-trim" d="M9.2 6.2 C18 4.4, 29 8.2, 39.5 6.8 L34.2 15.2 L39.5 23.6 C29 25.0, 18 21.2, 9.2 23.2 Z" fill="none" stroke-width="1.2"/>
+          </svg>
+          <em class="gl-sanguo-glyph"></em>
         </span>
         <span class="gl-unit-stem"></span>
         <span class="gl-unit-foot"></span>
@@ -1650,6 +1732,10 @@ export class MapRenderer {
       }
       item.el.querySelector(".gl-unit-label").textContent = unit.label;
       item.el.querySelector(".gl-unit-sub").textContent = unit.sub || "";
+      const sgGlyph = item.el.querySelector(".gl-sanguo-glyph");
+      if (sgGlyph) {
+        sgGlyph.textContent = getSanguoBannerGlyph(id, unit);
+      }
     });
   }
 
@@ -2451,7 +2537,7 @@ export class MapRenderer {
         el.className = `gl-marker marker-${type}${isNew ? " is-turn-new" : ""}`;
         el.setAttribute("aria-label", `${m.label}${m.desc ? `：${m.desc}` : ""}`);
         el.innerHTML = `
-          <span class="gl-marker-orb">${getMarkerGlyph(m)}</span>
+          <span class="gl-marker-orb"><span style="display:inline-block">${getMarkerGlyph(m)}</span></span>
           <span class="gl-marker-beam"></span>
           <span class="gl-marker-ring"></span>
         `;

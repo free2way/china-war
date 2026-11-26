@@ -1,5 +1,5 @@
-// 世界战史沙盘 · 战役注册表
-// 新增战役：1) 在 data/ 下新建 <id>.js；2) 在此处登记一条记录并提供 loader。
+// 世界战史沙盘 · 战役注册表（支持中文 / English 双语）
+// 新增战役：1) 在 data/ 下新建 <id>.js（及可选 data/en/<id>.js）；2) 在此处登记一条记录并提供 loader。
 // region: "china"（中国战史） | "world"（世界战史）
 // category: "china-ancient" | "china-modern" | "ww2" | 其他自定义时代分类
 // status: "available" 可进入沙盘；"planned" 在档案馆中以“筹备中”展示。
@@ -21,7 +21,18 @@ export const battleRegistry = [
     seal: "渡",
     accent: "#c93b2b",
     status: "available",
-    loader: () => import("./chishui-1935.js?v=3")
+    en: {
+      name: "Four Crossings of the Chishui",
+      periodLabel: "Jan–Mar 1935",
+      era: "Modern China · The Long March",
+      regionLabel: "Chinese History",
+      theater: "Sichuan · Guizhou · Yunnan",
+      opponents: "Central Red Army vs. KMT Forces",
+      summary: "Four rapid crossings of the Chishui River broke a 400,000-troop encirclement through mobile warfare.",
+      seal: "CS"
+    },
+    loader: () => import("./chishui-1935.js?v=3"),
+    enLoader: () => import("./en/chishui-1935.js?v=1")
   },
   {
     id: "guandu-200",
@@ -39,7 +50,18 @@ export const battleRegistry = [
     seal: "官",
     accent: "#c4923a",
     status: "available",
-    loader: () => import("./guandu-200.js?v=4")
+    en: {
+      name: "Battle of Guandu",
+      periodLabel: "200 AD",
+      era: "Ancient China · Late Eastern Han",
+      regionLabel: "Chinese History",
+      theater: "Yellow River South Bank · Henan",
+      opponents: "Cao Cao vs. Yuan Shao",
+      summary: "After a 100-day standoff, Cao Cao's night cavalry raid burned Wuchao's grain depot, shattering Yuan Shao's northern army.",
+      seal: "GD"
+    },
+    loader: () => import("./guandu-200.js?v=4"),
+    enLoader: () => import("./en/guandu-200.js?v=1")
   },
   {
     id: "changjin-1950",
@@ -57,7 +79,18 @@ export const battleRegistry = [
     seal: "津",
     accent: "#d1382c",
     status: "available",
-    loader: () => import("./changjin-1950.js?v=4")
+    en: {
+      name: "Battle of Lake Changjin",
+      periodLabel: "Nov–Dec 1950",
+      era: "Korean War · Eastern Front",
+      regionLabel: "Chinese History",
+      theater: "Kaema Plateau · Chosin Reservoir",
+      opponents: "PVA 9th Army Group vs. US X Corps",
+      summary: "In -40°C blizzards, PVA divisions encircled US X Corps around the frozen reservoir, destroying Task Force Faith and forcing evacuation from Hungnam.",
+      seal: "CJ"
+    },
+    loader: () => import("./changjin-1950.js?v=4"),
+    enLoader: () => import("./en/changjin-1950.js?v=1")
   },
   {
     id: "normandy-1944",
@@ -75,7 +108,18 @@ export const battleRegistry = [
     seal: "诺",
     accent: "#3b8ea5",
     status: "available",
-    loader: () => import("./normandy-1944.js?v=3")
+    en: {
+      name: "Normandy Landings (D-Day)",
+      periodLabel: "Jun–Jul 1944",
+      era: "World War II · Western Front",
+      regionLabel: "World History",
+      theater: "English Channel · Normandy",
+      opponents: "Allied Expeditionary Force vs. Wehrmacht",
+      summary: "History's largest amphibious invasion breached the Atlantic Wall across five beaches to open the Western Front.",
+      seal: "DD"
+    },
+    loader: () => import("./normandy-1944.js?v=3"),
+    enLoader: () => import("./en/normandy-1944.js?v=1")
   },
   {
     id: "market-garden-1944",
@@ -93,7 +137,18 @@ export const battleRegistry = [
     seal: "桥",
     accent: "#b5493a",
     status: "available",
-    loader: () => import("./market-garden-1944.js?v=3")
+    en: {
+      name: "Operation Market Garden",
+      periodLabel: "Sep 17–26, 1944",
+      era: "World War II · Western Front",
+      regionLabel: "World History",
+      theater: "Dutch Corridor · Lower Rhine",
+      opponents: "Allied Airborne & XXX Corps vs. Army Group B",
+      summary: "The largest daylight airborne drop aimed to seize Dutch river bridges along 'Hell's Highway', stalling at Arnhem—a bridge too far.",
+      seal: "MG"
+    },
+    loader: () => import("./market-garden-1944.js?v=3"),
+    enLoader: () => import("./en/market-garden-1944.js?v=1")
   },
   {
     id: "stalingrad-1942",
@@ -110,7 +165,17 @@ export const battleRegistry = [
     summary: "残酷巷战消耗德军锋芒，天王星行动两翼合围逆转二战东线战局。",
     seal: "斯",
     accent: "#7b8f9e",
-    status: "planned"
+    status: "planned",
+    en: {
+      name: "Battle of Stalingrad",
+      periodLabel: "Aug 1942–Feb 1943",
+      era: "World War II · Eastern Front",
+      regionLabel: "World History",
+      theater: "Volga River · Stalingrad",
+      opponents: "Soviet Red Army vs. German 6th Army",
+      summary: "Brutal urban attrition set up Operation Uranus, a double envelopment that turned the tide of the Eastern Front.",
+      seal: "SG"
+    }
   },
   {
     id: "feishui-383",
@@ -127,7 +192,17 @@ export const battleRegistry = [
     summary: "前秦号称百万南下，东晋北府兵趁其后撤阵乱一击而溃之。",
     seal: "淝",
     accent: "#4c84a3",
-    status: "planned"
+    status: "planned",
+    en: {
+      name: "Battle of Fei River",
+      periodLabel: "383 AD",
+      era: "Ancient China · Eastern Jin",
+      regionLabel: "Chinese History",
+      theater: "Huai Valley · Shouyang",
+      opponents: "Eastern Jin Beifu Army vs. Former Qin",
+      summary: "Heavily outnumbered Jin troops struck Former Qin mid-withdrawal across the Fei River, triggering a total rout.",
+      seal: "FR"
+    }
   },
   {
     id: "chibi-208",
@@ -144,7 +219,17 @@ export const battleRegistry = [
     summary: "孙刘联军以火攻大破曹军，奠定三分天下格局。",
     seal: "赤",
     accent: "#b8452e",
-    status: "planned"
+    status: "planned",
+    en: {
+      name: "Battle of Red Cliffs",
+      periodLabel: "208 AD",
+      era: "Ancient China · Eve of Three Kingdoms",
+      regionLabel: "Chinese History",
+      theater: "Middle Yangtze · Jing Province",
+      opponents: "Sun–Liu Coalition vs. Cao Cao",
+      summary: "Fire ships unleashed by the Sun–Liu alliance shattered Cao Cao's chained fleet, forging the Three Kingdoms balance.",
+      seal: "RC"
+    }
   }
 ];
 
@@ -157,8 +242,15 @@ export function getBattleEntry(id) {
 export async function loadBattle(id) {
   const entry = getBattleEntry(id);
   if (!entry || entry.status !== "available" || !entry.loader) {
-    throw new Error(`未知或未开放的战役：${id}`);
+    throw new Error(`Unknown or unavailable battle: ${id}`);
   }
   const mod = await entry.loader();
+  return mod.default;
+}
+
+export async function loadBattleEnOverlay(id) {
+  const entry = getBattleEntry(id);
+  if (!entry || !entry.enLoader) return null;
+  const mod = await entry.enLoader();
   return mod.default;
 }

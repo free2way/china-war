@@ -1,9 +1,10 @@
 // 战史沙盘 · 应用入口
 // 负责路由（档案馆 / 战役沙盘）、主题切换与各章节渲染；地图交互交由 MapRenderer。
 
-import { battleRegistry, loadBattle, getBattleEntry } from "./data/battles.js?v=7";
-import { normalizeBattle } from "./engine/schema.js?v=7";
-import { MapRenderer } from "./engine/mapRenderer.js?v=7";
+import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=12";
+import { normalizeBattle } from "./engine/schema.js?v=12";
+import { MapRenderer } from "./engine/mapRenderer.js?v=12";
+import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=2";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -55,15 +56,45 @@ function applyTheme(theme) {
   if (metaTheme) metaTheme.setAttribute("content", theme?.stageBg || "#121512");
 }
 
+function applyStaticI18n() {
+  const lang = getLang();
+  document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
+  $("#brand-title").textContent = t("siteTitle");
+  const sealEl = $("#brand-seal");
+  if (sealEl) sealEl.textContent = t("siteSeal");
+  $$("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  $$("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  const homeTitle = $("#home-title");
+  if (homeTitle) homeTitle.innerHTML = t("homeTitleHtml");
+  const cmdTitle = $("#command-title");
+  if (cmdTitle) cmdTitle.innerHTML = t("sec01TitleHtml");
+  const compassSvg = $("#compass-n-svg");
+  if (compassSvg) compassSvg.textContent = t("compassNorth");
+  const playLabel = $("#play-tour .play-label");
+  if (playLabel) playLabel.textContent = state.tourTimer ? t("pauseTour") : t("playTour");
+  const prevBtn = $("#phase-prev");
+  const nextBtn = $("#phase-next");
+  if (prevBtn) prevBtn.setAttribute("aria-label", t("phasePrev"));
+  if (nextBtn) nextBtn.setAttribute("aria-label", t("phaseNext"));
+  $$("#lang-toggle [data-lang-opt]").forEach((el) => {
+    el.classList.toggle("is-active", el.dataset.langOpt === lang);
+  });
+}
+
 /* ---------------- 菜单与档案馆 ---------------- */
 
 function renderBattleMenu() {
   const menu = $("#battle-menu");
   menu.innerHTML = `
-    <header><span>战役档案 · ARCHIVES</span><a href="./" data-nav-home>档案馆总览</a></header>
+    <header><span>${t("menuHeader")}</span><a href="./" data-nav-home>${t("menuOverview")}</a></header>
     <div class="battle-menu-list">
       ${battleRegistry
-        .map((item, i) => {
+        .map((raw, i) => {
+          const item = getLocalizedEntry(raw);
           const available = item.status === "available";
           const current = item.id === state.battleId;
           return `
@@ -75,7 +106,7 @@ function renderBattleMenu() {
               <strong>${item.name}</strong>
               <small>${item.periodLabel} · ${item.theater}</small>
             </span>
-            <span class="option-badge">${current ? "当前" : available ? pad(i + 1) : "筹备中"}</span>
+            <span class="option-badge">${current ? t("badgeCurrent") : available ? pad(i + 1) : t("badgePlanned")}</span>
           </button>`;
         })
         .join("")}
@@ -99,16 +130,17 @@ function renderArchive() {
   });
 
   grid.innerHTML = filtered
-    .map((item) => {
+    .map((raw) => {
+      const item = getLocalizedEntry(raw);
       const idx = battleRegistry.findIndex((b) => b.id === item.id);
       const available = item.status === "available";
       return `
       <article class="archive-card ${available ? "" : "is-planned"}" style="--item-accent:${item.accent}">
         <button type="button" class="archive-card-hit" data-battle-id="${item.id}" ${available ? "" : "disabled"}
-                aria-label="${available ? "进入" : "筹备中："}${item.name}沙盘"></button>
+                aria-label="${available ? t("cardAriaEnter") : t("cardAriaPlanned")}${item.name}${t("cardAriaSuffix")}"></button>
         <div class="card-top">
-          <span class="card-no">档案 ${pad(idx + 1)} · ${item.regionLabel || "战史"}</span>
-          <span class="card-status">${available ? "可推演" : "筹备中"}</span>
+          <span class="card-no">${t("cardArchivePrefix")} ${pad(idx + 1)} · ${item.regionLabel || ""}</span>
+          <span class="card-status">${available ? t("cardPlayable") : t("cardPlanned")}</span>
         </div>
         <div class="card-seal" aria-hidden="true">${item.seal}</div>
         <div class="card-body">
@@ -117,11 +149,11 @@ function renderArchive() {
           <p>${item.summary}</p>
         </div>
         <dl class="card-meta">
-          <div><dt>时间</dt><dd>${item.periodLabel}</dd></div>
-          <div><dt>战场</dt><dd>${item.theater}</dd></div>
-          <div><dt>对阵</dt><dd>${item.opponents}</dd></div>
+          <div><dt>${t("cardTime")}</dt><dd>${item.periodLabel}</dd></div>
+          <div><dt>${t("cardTheater")}</dt><dd>${item.theater}</dd></div>
+          <div><dt>${t("cardOpponents")}</dt><dd>${item.opponents}</dd></div>
         </dl>
-        <div class="card-cta">${available ? "进入沙盘 →" : "敬请期待"}</div>
+        <div class="card-cta">${available ? t("cardEnter") : t("cardComingSoon")}</div>
       </article>`;
     })
     .join("");
@@ -134,9 +166,9 @@ function renderArchive() {
   const chinaCount = battleRegistry.filter((b) => b.status === "available" && b.region === "china").length;
   const worldCount = battleRegistry.filter((b) => b.status === "available" && b.region === "world").length;
   $("#home-stats").innerHTML = `
-    <div><strong>${pad(available)}</strong><span>可推演战役</span></div>
-    <div><strong>${pad(chinaCount)} / ${pad(worldCount)}</strong><span>中国战史 / 世界战史</span></div>
-    <div><strong>${battleRegistry.length ? `${Math.min(...battleRegistry.map((b) => +b.period))}—${Math.max(...battleRegistry.map((b) => +b.period))}` : "—"}</strong><span>时间跨度（年）</span></div>`;
+    <div><strong>${pad(available)}</strong><span>${t("statPlayable")}</span></div>
+    <div><strong>${pad(chinaCount)} / ${pad(worldCount)}</strong><span>${t("statSplit")}</span></div>
+    <div><strong>${battleRegistry.length ? `${Math.min(...battleRegistry.map((b) => +b.period))}—${Math.max(...battleRegistry.map((b) => +b.period))}` : "—"}</strong><span>${t("statSpan")}</span></div>`;
 }
 
 function openMenu() {
@@ -191,19 +223,22 @@ function showHome() {
   document.body.dataset.view = "home";
   $("#view-home").hidden = false;
   $("#view-battle").hidden = true;
-  document.title = "战史沙盘｜世界历史著名战役交互推演";
-  $("#switcher-seal").textContent = "史";
-  $("#switcher-kicker").textContent = "战役档案";
-  $("#switcher-name").textContent = "选择战役";
-  $("#footer-title").textContent = "战史沙盘";
+  document.title = t("siteFullTitle");
+  $("#switcher-seal").textContent = t("siteSeal");
+  $("#switcher-kicker").textContent = t("switcherKickerHome");
+  $("#switcher-name").textContent = t("switcherNameHome");
+  $("#footer-title").textContent = t("siteTitle");
   $("#footer-sources").innerHTML = "";
+  renderArchive();
   renderBattleMenu();
   setupReveal();
 }
 
-async function showBattle(id) {
+async function showBattle(id, { forceReload = false, preservePhase = false } = {}) {
   stopTour();
-  if (state.battleId === id && state.battle) {
+  const prevPhase = preservePhase ? state.phase : 0;
+  const prevOrderSide = preservePhase ? state.orderSide : "red";
+  if (!forceReload && state.battleId === id && state.battle) {
     document.body.dataset.view = "battle";
     return;
   }
@@ -211,9 +246,15 @@ async function showBattle(id) {
   document.body.classList.add("is-loading");
   let battle;
   try {
-    battle = normalizeBattle(await loadBattle(id));
+    const raw = normalizeBattle(await loadBattle(id));
+    if (isEn()) {
+      const overlay = await loadBattleEnOverlay(id);
+      battle = applyBattleOverlay(raw, overlay);
+    } else {
+      battle = raw;
+    }
   } catch (err) {
-    console.error("加载战役失败:", err);
+    console.error("Failed to load battle:", err);
     document.body.classList.remove("is-loading");
     showHome();
     return;
@@ -221,27 +262,28 @@ async function showBattle(id) {
 
   state.battleId = id;
   state.battle = battle;
-  state.phase = 0;
-  state.orderSide = "red";
+  state.phase = Math.min(prevPhase, Math.max(0, battle.phases.length - 1));
+  state.orderSide = prevOrderSide;
 
   applyTheme(battle.theme);
   document.body.dataset.view = "battle";
   $("#view-home").hidden = true;
   $("#view-battle").hidden = false;
 
-  document.title = `${battle.title}｜战史沙盘`;
+  document.title = `${battle.title}${t("battleTitleSuffix")}`;
   $('meta[name="description"]')?.setAttribute(
     "content",
-    `${battle.title}交互战役沙盘：${battle.subtitle}。按阶段推演双方部署、机动路线与制胜逻辑。`
+    `${battle.title}: ${battle.subtitle}. ${t("mapDescSuffix")}`
   );
 
   const index = battleRegistry.findIndex((b) => b.id === id);
   $("#switcher-seal").textContent = battle.seal;
-  $("#switcher-kicker").textContent = `战役档案 ${pad(index + 1)}`;
+  $("#switcher-kicker").textContent = `${t("switcherArchivePrefix")} ${pad(index + 1)}`;
   $("#switcher-name").textContent = battle.title;
 
   renderHero(battle);
   mapRenderer.renderBattle(battle);
+  mapRenderer.refreshLanguage();
   $("#map-scale").textContent = battle.mapConfig.scaleNote || "";
   renderPhaseControls(battle);
   renderCommanders(battle);
@@ -253,7 +295,7 @@ async function showBattle(id) {
   renderFooter(battle);
   renderBattleMenu();
 
-  setPhase(0);
+  setPhase(state.phase);
   setupReveal();
   requestAnimationFrame(() => document.body.classList.remove("is-loading"));
 }
@@ -329,8 +371,8 @@ function renderCommanders(battle) {
 function renderOrder(battle) {
   const side = state.orderSide;
   const fs = battle.mapConfig.filterSides;
-  $('[data-order-side="red"]').textContent = `${fs.red}序列`;
-  $('[data-order-side="blue"]').textContent = `${fs.blue}序列`;
+  $('[data-order-side="red"]').textContent = `${fs.red}${t("orderSuffix")}`;
+  $('[data-order-side="blue"]').textContent = `${fs.blue}${t("orderSuffix")}`;
   $("#order-table").innerHTML = (battle.orderOfBattle[side] || [])
     .map(([unit, cmd, role]) => `<div class="order-row"><strong>${unit}</strong><b>${cmd}</b><span>${role}</span></div>`)
     .join("");
@@ -346,8 +388,25 @@ function renderDossier(battle, index) {
   const phase = battle.phases[index];
   $("#dossier-title").textContent = `${phase.name} · ${phase.date}`;
   $("#dossier-list").innerHTML = phase.detail
-    .map(([d, t, c]) => `<div class="dossier-row"><time>${d}</time><strong>${t}</strong><span>${c}</span></div>`)
+    .map(
+      ([d, title, c], i) =>
+        `<div class="dossier-row" data-turn-idx="${i}" role="button" tabindex="0"><time>${d}</time><strong>${title}</strong><span>${c}</span></div>`
+    )
     .join("");
+  $$("#dossier-list .dossier-row").forEach((row) => {
+    const jump = () => {
+      stopTour();
+      mapRenderer?.goToTurn(Number(row.dataset.turnIdx));
+      $("#sandtable").scrollIntoView({ behavior: "smooth" });
+    };
+    row.addEventListener("click", jump);
+    row.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        jump();
+      }
+    });
+  });
   const tabs = $(".dossier-tabs");
   tabs.innerHTML = battle.phases
     .map(
@@ -361,6 +420,12 @@ function renderDossier(battle, index) {
       setPhase(Number(btn.dataset.dossierPhase));
     })
   );
+}
+
+function highlightDossierTurn(turnIdx) {
+  $$("#dossier-list .dossier-row").forEach((row, i) => {
+    row.classList.toggle("is-turn-active", turnIdx >= 0 && i === turnIdx);
+  });
 }
 
 function renderSituation(battle) {
@@ -394,7 +459,7 @@ function renderSituation(battle) {
 function renderLogic(battle) {
   const l = battle.logic || {};
   const labelEl = $("#logic-section-label");
-  if (labelEl) labelEl.textContent = l.sectionLabel || "胜负逻辑";
+  if (labelEl) labelEl.textContent = l.sectionLabel || t("sec03DefaultLabel");
   $("#logic-eyebrow").textContent = l.eyebrow || "";
   $("#logic-title").innerHTML = l.title || "";
   $("#logic-stage").innerHTML = (l.steps || [])
@@ -449,9 +514,9 @@ function renderClosing(battle) {
 }
 
 function renderFooter(battle) {
-  $("#footer-title").textContent = `${battle.title} · 战史沙盘`;
+  $("#footer-title").textContent = `${battle.title} · ${t("siteTitle")}`;
   $("#footer-sources").innerHTML =
-    `<span>主要史料与参考</span>` +
+    `<span>${t("footerSourcesLabel")}</span>` +
     battle.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noreferrer">${s.title}</a>`).join("");
 }
 
@@ -465,8 +530,8 @@ function setPhase(index) {
   const phase = battle.phases[state.phase];
 
   renderBrief(phase, state.phase);
-  mapRenderer.setPhase(state.phase);
   renderDossier(battle, state.phase);
+  mapRenderer.setPhase(state.phase);
 
   $("#phase-progress-bar").style.width = `${((state.phase + 1) / total) * 100}%`;
   $$(".phase-button").forEach((btn, i) => {
@@ -485,7 +550,7 @@ function stopTour() {
   }
   const btn = $("#play-tour");
   btn.classList.remove("is-playing");
-  $(".play-label", btn).textContent = "自动推演";
+  $(".play-label", btn).textContent = t("playTour");
 }
 
 function startTour() {
@@ -494,7 +559,7 @@ function startTour() {
   if (state.phase >= total - 1) setPhase(0);
   const btn = $("#play-tour");
   btn.classList.add("is-playing");
-  $(".play-label", btn).textContent = "暂停推演";
+  $(".play-label", btn).textContent = t("pauseTour");
   state.tourTimer = setInterval(() => {
     if (state.phase >= total - 1) return stopTour();
     setPhase(state.phase + 1);
@@ -512,6 +577,16 @@ function setupGlobalEvents() {
   $("#phase-next").addEventListener("click", () => {
     stopTour();
     setPhase(state.phase + 1);
+  });
+
+  $("#lang-toggle")?.addEventListener("click", async () => {
+    setLang(isEn() ? "zh" : "en");
+    applyStaticI18n();
+    if (state.battleId) {
+      await showBattle(state.battleId, { forceReload: true, preservePhase: true });
+    } else {
+      showHome();
+    }
   });
 
   $("#battle-switcher").addEventListener("click", (e) => {
@@ -620,7 +695,10 @@ function setupReveal() {
 /* ---------------- 启动 ---------------- */
 
 function init() {
+  applyStaticI18n();
   mapRenderer = new MapRenderer($("#map-stage"));
+  mapRenderer.onTurnChange = (turnIdx) => highlightDossierTurn(turnIdx);
+  mapRenderer.refreshLanguage();
   renderArchive();
   setupGlobalEvents();
   route();

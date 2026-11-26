@@ -6,24 +6,29 @@
     <meta name="description" content="战史沙盘：以三维立体交互方式推演古今中外著名战役——四渡赤水、官渡之战、长津湖战役、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
     <title>战史沙盘｜世界历史著名战役三维交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=7" />
+    <link rel="stylesheet" href="./styles.css?v=12" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
       <a class="brand" href="./" data-nav-home aria-label="返回战役档案馆">
-        <span class="brand-seal" aria-hidden="true">史</span>
-        <span class="brand-text"><strong>战史沙盘</strong><small>WAR SANDTABLE</small></span>
+        <span class="brand-seal" id="brand-seal" aria-hidden="true">史</span>
+        <span class="brand-text"><strong id="brand-title">战史沙盘</strong><small>WAR SANDTABLE</small></span>
       </a>
 
       <nav class="nav-links" aria-label="页面章节">
-        <a href="#sandtable">沙盘</a>
-        <a href="#command">指挥序列</a>
-        <a href="#situation">战役态势</a>
-        <a href="#logic">胜负逻辑</a>
-        <a href="#chronicle">事件全览</a>
+        <a href="#sandtable" data-i18n="navSandtable">沙盘</a>
+        <a href="#command" data-i18n="navCommand">指挥序列</a>
+        <a href="#situation" data-i18n="navSituation">战役态势</a>
+        <a href="#logic" data-i18n="navLogic">胜负逻辑</a>
+        <a href="#chronicle" data-i18n="navChronicle">事件全览</a>
       </nav>
 
       <div class="header-actions">
+        <button class="lang-toggle" id="lang-toggle" type="button" aria-label="Switch language / 切换语言" title="Switch language / 切换语言">
+          <span data-lang-opt="zh" class="is-active">中</span>
+          <i aria-hidden="true">/</i>
+          <span data-lang-opt="en">EN</span>
+        </button>
         <button class="battle-switcher" id="battle-switcher" type="button" aria-haspopup="true" aria-expanded="false">
           <span class="switcher-seal" id="switcher-seal">史</span>
           <span class="switcher-text"><small id="switcher-kicker">战役档案</small><strong id="switcher-name">选择战役</strong></span>
@@ -38,9 +43,9 @@
       <section class="home-hero">
         <div class="home-hero-bg" aria-hidden="true"></div>
         <div class="home-hero-copy">
-          <p class="eyebrow"><span>世界战争史 · 中外经典战役交互沙盘</span></p>
-          <h1>观<span class="accent">兵</span>形之变，<br />读胜负之机。</h1>
-          <p class="home-deck">
+          <p class="eyebrow"><span data-i18n="homeEyebrow">世界战争史 · 中外经典战役交互沙盘</span></p>
+          <h1 id="home-title">观<span class="accent">兵</span>形之变，<br />读胜负之机。</h1>
+          <p class="home-deck" data-i18n="homeDeck">
             跨越古今中外，每一场著名战役都是一盘在时间与地理中展开的沙盘。选择一份战役档案，按阶段推演双方部署、机动路线与决策逻辑。
           </p>
           <div class="home-stats" id="home-stats"></div>
@@ -50,14 +55,14 @@
       <section class="archive" aria-labelledby="archive-title">
         <div class="archive-head">
           <div>
-            <p class="eyebrow">GLOBAL ARCHIVES · 战史档案馆</p>
-            <h2 id="archive-title">选择一场战役</h2>
+            <p class="eyebrow" data-i18n="archiveEyebrow">GLOBAL ARCHIVES · 战史档案馆</p>
+            <h2 id="archive-title" data-i18n="archiveTitle">选择一场战役</h2>
           </div>
           <div class="archive-filters" id="archive-filters" role="tablist" aria-label="按战场与时代筛选战役">
-            <button type="button" class="is-active" role="tab" aria-selected="true" data-era-filter="all">全部档案</button>
-            <button type="button" role="tab" aria-selected="false" data-era-filter="china">中国战史</button>
-            <button type="button" role="tab" aria-selected="false" data-era-filter="world">世界战史</button>
-            <button type="button" role="tab" aria-selected="false" data-era-filter="ww2">第二次世界大战</button>
+            <button type="button" class="is-active" role="tab" aria-selected="true" data-era-filter="all" data-i18n="filterAll">全部档案</button>
+            <button type="button" role="tab" aria-selected="false" data-era-filter="china" data-i18n="filterChina">中国战史</button>
+            <button type="button" role="tab" aria-selected="false" data-era-filter="world" data-i18n="filterWorld">世界战史</button>
+            <button type="button" role="tab" aria-selected="false" data-era-filter="ww2" data-i18n="filterWw2">第二次世界大战</button>
           </div>
         </div>
         <div class="archive-grid" id="archive-grid"></div>
@@ -87,32 +92,56 @@
             </div>
             <p class="brief-intent" id="brief-intent"></p>
             <dl class="brief-meta">
-              <div><dt>目的</dt><dd id="brief-goal"></dd></div>
-              <div><dt>结果</dt><dd id="brief-result"></dd></div>
+              <div><dt data-i18n="briefGoal">目的</dt><dd id="brief-goal"></dd></div>
+              <div><dt data-i18n="briefResult">结果</dt><dd id="brief-result"></dd></div>
             </dl>
           </aside>
         </div>
 
-        <div class="map-stage is-3d" id="map-stage" aria-label="三维动态战役沙盘">
+        <div class="map-stage is-3d" id="map-stage" data-map-style="game" aria-label="三维动态战役沙盘">
           <div class="stage-reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
           <div class="map-toolbar">
             <div class="map-filters" role="group" aria-label="阵营筛选"></div>
             <div class="map-view-controls" role="group" aria-label="三维视角控制">
-              <button type="button" class="is-active" data-view-mode="3d" title="三维立体起伏地形">3D 沙盘</button>
-              <button type="button" data-cam-action="low-fly" title="低空临境观察山势">低空</button>
-              <button type="button" class="is-active" data-cam-action="auto-cam" aria-pressed="true" title="切换阶段时电影运镜自动聚焦战区">运镜</button>
-              <button type="button" data-view-mode="2d" title="二维平面地图">2D 平面</button>
+              <button type="button" class="is-active" data-view-mode="3d" data-i18n="btn3d" data-i18n-title="btn3dTitle" title="三维立体起伏地形">3D 沙盘</button>
+              <button type="button" data-cam-action="low-fly" data-i18n="btnLowFly" data-i18n-title="btnLowFlyTitle" title="低空临境观察山势">低空</button>
+              <button type="button" class="is-active" data-cam-action="auto-cam" aria-pressed="true" data-i18n="btnAutoCam" data-i18n-title="btnAutoCamTitle" title="切换阶段时电影运镜自动聚焦战区">运镜</button>
+              <button type="button" class="is-active" data-cam-action="toggle-style" aria-pressed="true" data-i18n-title="btnStyleTitle" title="切换策略游戏地图风 / 写实纪录片风">游戏风</button>
+              <button type="button" data-view-mode="2d" data-i18n="btn2d" data-i18n-title="btn2dTitle" title="二维平面地图">2D 平面</button>
               <span class="toolbar-sep" aria-hidden="true"></span>
-              <button type="button" data-cam-action="zoom-out" aria-label="缩小视角" title="缩小">−</button>
-              <button type="button" data-cam-action="zoom-in" aria-label="放大视角" title="放大">＋</button>
-              <button type="button" data-cam-action="reset" aria-label="重置视角" title="重置视角">↺</button>
+              <button type="button" data-cam-action="zoom-out" aria-label="缩小视角" data-i18n-title="btnZoomOut" title="缩小">−</button>
+              <button type="button" data-cam-action="zoom-in" aria-label="放大视角" data-i18n-title="btnZoomIn" title="放大">＋</button>
+              <button type="button" data-cam-action="reset" aria-label="重置视角" data-i18n-title="btnReset" title="重置视角">↺</button>
               <span class="toolbar-sep" aria-hidden="true"></span>
-              <button type="button" data-cam-action="expand" id="stage-expand-btn" aria-pressed="false" title="展开/收起全屏沙盘">⛶ 大屏</button>
+              <button type="button" data-cam-action="expand" id="stage-expand-btn" aria-pressed="false" data-i18n-title="btnBriefTitle" title="展开/收起全屏沙盘">⛶ 大屏</button>
             </div>
             <div class="map-layer-toggles" role="group" aria-label="图层开关"></div>
           </div>
 
           <div class="hud-env-badge" id="hud-env-badge" aria-hidden="true"></div>
+          <div class="hud-war-bar" id="hud-war-bar" aria-live="polite">
+            <div class="hud-momentum">
+              <span class="mom-side mom-red" id="hud-red-name">红方</span>
+              <div class="mom-track">
+                <span class="mom-fill-red" id="hud-momentum-fill" style="width:50%"></span>
+                <i class="mom-spark" id="hud-momentum-spark" style="left:50%"></i>
+              </div>
+              <span class="mom-side mom-blue" id="hud-blue-name">蓝方</span>
+            </div>
+            <div class="turn-sequencer" id="turn-sequencer" role="group" aria-label="分步回合推演控制">
+              <div class="turn-controls">
+                <button type="button" class="turn-btn" id="turn-prev" title="上一回合">‹</button>
+                <button type="button" class="turn-btn turn-play-btn is-playing" id="turn-play" title="分步演进 / 暂停">⏸</button>
+                <button type="button" class="turn-btn" id="turn-next" title="下一回合">›</button>
+              </div>
+              <span class="turn-actor actor-red" id="turn-actor-badge">我方行动</span>
+              <span class="turn-step-count" id="turn-step-count">1/4</span>
+              <span class="ticker-text" id="hud-ticker-text">正在推演战场态势…</span>
+              <div class="turn-dots" id="turn-dots" role="tablist"></div>
+              <button type="button" class="turn-mode-btn" id="turn-mode-btn" title="切换：分步回合推演 / 本阶段路线全览">全览</button>
+              <span class="turn-progress-track" aria-hidden="true"><i id="turn-progress-fill"></i></span>
+            </div>
+          </div>
           <div class="hud-compass" aria-hidden="true" title="北向指北针">
             <span class="hud-compass-n">N</span>
             <span class="hud-compass-needle" id="hud-compass-needle"></span>
@@ -180,7 +209,7 @@
                   <circle r="24" />
                   <path d="M0 -20 L5 0 L0 20 L-5 0 Z" />
                   <path class="compass-n" d="M0 -20 L5 0 L-5 0 Z" />
-                  <text y="-30">北</text>
+                  <text y="-30" id="compass-n-svg">北</text>
                 </g>
               </svg>
 
@@ -219,13 +248,13 @@
       </section>
 
       <section class="section command" id="command" aria-labelledby="command-title">
-        <div class="section-index"><span>01</span>指挥体系与战斗序列</div>
+        <div class="section-index"><span>01</span><b data-i18n="sec01Label">指挥体系与战斗序列</b></div>
         <div class="section-head">
           <div>
             <p class="eyebrow">WHO COMMANDS · WHO MOVES</p>
             <h2 id="command-title">先看谁在指挥，<br />再看部队往哪里走。</h2>
           </div>
-          <p>沙盘中的番号按阶段重新定位。切换阶段可查看各部当时所处方向与任务；悬停或点击地图上的番号、地名可查看详情。</p>
+          <p data-i18n="sec01Deck">沙盘中的番号按阶段重新定位。切换阶段可查看各部当时所处方向与任务；悬停或点击地图上的番号、地名可查看详情。</p>
         </div>
 
         <div class="commanders">
@@ -249,7 +278,7 @@
 
         <div class="phase-dossier">
           <header>
-            <div><span class="eyebrow">阶段行动记录</span><h3 id="dossier-title"></h3></div>
+            <div><span class="eyebrow" data-i18n="dossierEyebrow">阶段行动记录</span><h3 id="dossier-title"></h3></div>
             <div class="dossier-tabs" role="tablist" aria-label="阶段行动记录"></div>
           </header>
           <div class="dossier-list" id="dossier-list"></div>
@@ -257,7 +286,7 @@
       </section>
 
       <section class="section situation" id="situation" aria-labelledby="situation-title">
-        <div class="section-index"><span>02</span>战役态势</div>
+        <div class="section-index"><span>02</span><b data-i18n="sec02Label">战役态势</b></div>
         <div class="section-head">
           <div>
             <p class="eyebrow" id="situation-eyebrow"></p>
@@ -311,7 +340,7 @@
       </section>
 
       <section class="section chronicle" id="chronicle" aria-labelledby="chronicle-title">
-        <div class="section-index"><span>04</span>事件全览</div>
+        <div class="section-index"><span>04</span><b data-i18n="sec04Label">事件全览</b></div>
         <div class="section-head">
           <div>
             <p class="eyebrow" id="chronicle-eyebrow"></p>
@@ -328,8 +357,8 @@
         <cite id="closing-author"></cite>
         <p id="closing-desc"></p>
         <div class="closing-actions">
-          <a href="#sandtable" class="ghost-link">返回沙盘 ↑</a>
-          <a href="./" class="ghost-link" data-nav-home>战役档案馆 →</a>
+          <a href="#sandtable" class="ghost-link" data-i18n="closingBackSandtable">返回沙盘 ↑</a>
+          <a href="./" class="ghost-link" data-nav-home data-i18n="closingBackArchive">战役档案馆 →</a>
         </div>
       </section>
     </main>
@@ -337,12 +366,12 @@
     <footer class="site-footer">
       <div class="footer-brand">
         <strong id="footer-title">战史沙盘</strong>
-        <span>历史学习与战役推演专题</span>
+        <span data-i18n="footerSubtitle">历史学习与战役推演专题</span>
       </div>
       <div class="sources" id="footer-sources"></div>
-      <p>地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
+      <p data-i18n="footerDisclaimer">地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=7"></script>
+    <script type="module" src="./app.js?v=12"></script>
   </body>
 </html>

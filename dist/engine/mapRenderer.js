@@ -2,8 +2,10 @@
 // 支持真实起伏地形与实时软阴影、实体 3D 森林与城池关隘、分时代不同军装 3D 立体小人方阵/骑兵/坦克、
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
-import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=12";
-import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=2";
+import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=13";
+import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=3";
+import { VoiceNarrator } from "./voiceNarrator.js?v=2";
+import { getPhaseTurnScript } from "../data/turnScripts.js?v=1";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const PLATE_HEIGHT = 30;
@@ -340,6 +342,10 @@ export class MapRenderer {
     this.hudCompassNeedleEl = stageEl.querySelector("#hud-compass-needle");
     this.hudEnvBadgeEl = stageEl.querySelector("#hud-env-badge");
     this.turnProgressFillEl = stageEl.querySelector("#turn-progress-fill");
+    this.bannerEl = stageEl.querySelector("#cinematic-banner");
+    this.voiceBtnEl = stageEl.querySelector("#turn-voice-btn");
+    this.narrator = new VoiceNarrator();
+    this.bannerTimer = null;
     this.stageEl.classList.toggle("has-webgl", this.terrain3d.ready);
 
     this.battle = null;
@@ -531,31 +537,68 @@ export class MapRenderer {
     this.stageEl.querySelector("#turn-play")?.addEventListener("click", () => {
       if (this.turnMode === "all") {
         this.turnMode = "step";
+        this.turnPlaying = true;
         this.applyTurn(0);
-        this.startTurnTimer();
         return;
       }
       if (this.turnPlaying) {
         this.stopTurnTimer();
+        this.renderTurnHud();
+      } else if (this.currentTurn >= this.turns.length - 1) {
+        this.turnPlaying = true;
+        this.applyTurn(0);
       } else {
-        if (this.currentTurn >= this.turns.length - 1) {
-          this.applyTurn(0);
-        }
         this.startTurnTimer();
       }
-      this.renderTurnHud();
     });
     this.stageEl.querySelector("#turn-mode-btn")?.addEventListener("click", () => {
       if (this.turnMode === "step") {
         this.stopTurnTimer();
+        this.narrator.stop();
         this.turnMode = "all";
         this.applyTurn(-1);
       } else {
         this.turnMode = "step";
+        this.turnPlaying = true;
         this.applyTurn(0);
-        this.startTurnTimer();
       }
     });
+    this.voiceBtnEl?.addEventListener("click", () => {
+      if (!this.narrator.isSupported()) {
+        this.voiceBtnEl.title = t("voiceUnsupported");
+        return;
+      }
+      const next = !this.narrator.isEnabled();
+      this.narrator.setEnabled(next);
+      this.updateVoiceButton();
+      if (next) {
+        // 立即播报当前回合解说；若正在自动演进则切换为语音同步节奏
+        if (this.turnTimer) {
+          clearTimeout(this.turnTimer);
+          this.turnTimer = null;
+        }
+        this.speakCurrentTurn(() => this.scheduleNextTurnAfterSpeech());
+      } else {
+        // 关闭语音后，如仍处于演进模式则恢复定时推进
+        if (this.turnPlaying && this.turnMode === "step") {
+          this.scheduleTurnTimeout();
+        }
+      }
+    });
+    this.updateVoiceButton();
+  }
+
+  updateVoiceButton(isSpeaking = false) {
+    if (!this.voiceBtnEl) return;
+    const on = this.narrator.isEnabled();
+    this.voiceBtnEl.classList.toggle("is-active", on);
+    this.voiceBtnEl.classList.toggle("is-speaking", on && isSpeaking);
+    this.voiceBtnEl.setAttribute("aria-pressed", String(on));
+    this.voiceBtnEl.title = !this.narrator.isSupported()
+      ? t("voiceUnsupported")
+      : on
+      ? t("voiceTitleOn")
+      : t("voiceTitleOff");
   }
 
   setViewMode(mode) {
@@ -621,6 +664,10 @@ export class MapRenderer {
     }
     this.renderLayerToggles();
     this.renderTurnHud();
+    this.updateVoiceButton(this.narrator.speaking);
+    if (this.narrator.isEnabled() && this.battle) {
+      this.speakCurrentTurn(() => this.scheduleNextTurnAfterSpeech());
+    }
   }
 
   renderBattle(battle) {
@@ -1038,8 +1085,8 @@ export class MapRenderer {
       this.stopTurnTimer();
       this.applyTurn(-1);
     } else {
+      this.turnPlaying = true;
       this.applyTurn(0);
-      this.startTurnTimer();
     }
 
     if (this.terrain3d.ready && this.viewMode === "3d") {
@@ -1412,6 +1459,7 @@ export class MapRenderer {
     const totalTurns = Math.max(1, this.turns.length);
     const stepFrac = isAll ? 1 : (this.currentTurn + 1) / totalTurns;
     const actor = isAll ? "all" : activeTurn?.actor || "all";
+    const focusSet = !isAll && activeTurn?.focusUnits?.length ? new Set(activeTurn.focusUnits) : null;
 
     this.glUnits.forEach((item, id) => {
       const unit = activeMap.get(id);
@@ -1453,15 +1501,17 @@ export class MapRenderer {
         hp = 94;
       }
 
-      const isActing = !isAll && (actor === "clash" || actor === unit.side);
-      const isIdle = !isAll && ((actor === "red" && unit.side !== "red") || (actor === "blue" && unit.side !== "blue"));
+      // 战术信息按需呼吸：仅本回合核心参战部队展开完整战旗铭牌，其余部队收拢为极简圆点
+      const isFocused = focusSet ? focusSet.has(id) : isAll || actor === "clash" || actor === unit.side;
+      const isBreathingDot = !isAll && !isFocused;
+      const isActing = !isAll && isFocused;
 
       item.el.style.opacity = "1";
       item.el.style.pointerEvents = "auto";
       item.el.style.setProperty("--hp", `${hp}%`);
       item.el.className = `gl-unit side-${unit.side} kind-${kind}${isCritical ? " is-critical" : ""}${
         isActing ? " is-turn-active" : ""
-      }${isIdle ? " is-turn-idle" : ""}`;
+      }${isBreathingDot ? " is-breathing-dot" : ""}`;
       item.el.classList.toggle("is-muted", this.forceFilter !== "all" && this.forceFilter !== unit.side);
       item.el.setAttribute("aria-label", `${unit.label}${unit.sub ? `：${unit.sub}` : ""}`);
       const badge = item.el.querySelector(".gl-unit-badge");
@@ -1496,12 +1546,10 @@ export class MapRenderer {
     return result;
   }
 
-  // 根据当前阶段时间线（phase.detail）智能编排“分步回合批次”
+  // 优先采用手工精编的历史回合剧本（turnScripts.js），无剧本时自动智能编排
   buildPhaseTurns(phase, phaseIndex) {
     const details =
       phase.detail && phase.detail.length > 0 ? phase.detail : [[phase.date || "", phase.name, phase.goal || ""]];
-    const total = details.length;
-
     const activeRedEl = this.svgEl?.querySelector("#map-routes .route.is-active");
     const redSubpaths = this.sampleSvgSubpaths(activeRedEl, 84);
     const enemyEls = [...(this.svgEl?.querySelectorAll("#map-enemy-routes .enemy-route-path") || [])];
@@ -1509,6 +1557,50 @@ export class MapRenderer {
       .map((el, idx) => ({ idx, el, points: this.sampleSvgPath(el, 48) }))
       .filter((e) => e.points.length >= 2);
 
+    const script = getPhaseTurnScript(this.battle?.id, phase.id);
+    if (script && script.length > 0) {
+      const turns = script.map((sc, idx) => {
+        const [date, title, desc] = details[idx] || [phase.date || "", phase.name, ""];
+        const redSlices = [];
+        if (Array.isArray(sc.redSubpaths)) {
+          sc.redSubpaths.forEach((subIdx) => {
+            if (redSubpaths[subIdx]) redSlices.push({ points: redSubpaths[subIdx] });
+          });
+        } else if (Array.isArray(sc.redSegment) && redSubpaths[0]) {
+          const full = redSubpaths[0];
+          const n = full.length;
+          const sI = Math.max(0, Math.floor(sc.redSegment[0] * (n - 1)));
+          const eI = Math.min(n - 1, Math.ceil(sc.redSegment[1] * (n - 1)));
+          if (eI > sI) redSlices.push({ points: full.slice(sI, eI + 1) });
+        }
+
+        const validEnemy = (sc.enemyIndices || []).filter((i) => enemySubpaths.some((e) => e.idx === i));
+        const validMarkers = (sc.markerIndices || []).filter((i) => i >= 0 && i < (phase.markers || []).length);
+
+        return {
+          index: idx,
+          date,
+          title,
+          desc,
+          actor: sc.actor || "red",
+          focusUnits: sc.focusUnits || [],
+          focusPlaces: sc.focusPlaces || [],
+          redSlices,
+          enemyIndices: validEnemy,
+          markerIndices: validMarkers,
+          sfx: sc.sfx || "march",
+          banner: sc.banner || null,
+          narration: sc.narration || null
+        };
+      });
+      turns._redSubpaths = redSubpaths;
+      turns._enemySubpaths = enemySubpaths;
+      turns._phaseIndex = phaseIndex;
+      return turns;
+    }
+
+    // 自动编排兜底（适用于未来新增的未写剧本战役）
+    const total = details.length;
     const markers = phase.markers || [];
     const turns = details.map(([date, title, desc], idx) => {
       const txt = `${title || ""} ${desc || ""}`;
@@ -1520,46 +1612,37 @@ export class MapRenderer {
       const isBlueInit =
         /^(颜良|袁绍|袁军|文丑|川军|德军|党卫军|美军|桑镇.*炸|费赫尔.*黑|Yuan|German|SS |Son |Black Friday)/i.test(
           `${title || ""}`
-        ) ||
-        (/围白马|连营数十里|地道与长堑|反击|切断.*公路|Siege of Baima|Miles of Encampments|Tunnels|Counterattack/i.test(txt) &&
-          !isClash);
+        );
       if (isClash) actor = "clash";
       else if (isBlueInit && enemySubpaths.length > 0) actor = "blue";
-      else actor = "red";
-
       return {
         index: idx,
         date,
         title,
         desc,
         actor,
+        focusUnits: [],
+        focusPlaces: [],
         redSlices: [],
         enemyIndices: [],
-        markerIndices: []
+        markerIndices: [],
+        sfx: isClash ? "clash" : "march",
+        banner: null,
+        narration: null
       };
     });
 
-    // 将敌方路线错峰分配到对应回合（不再同时齐发造成凌乱）
     if (enemySubpaths.length > 0) {
       const blueSlots = turns.filter((x) => x.actor === "blue").map((x) => x.index);
       const clashSlots = turns.filter((x) => x.actor === "clash").map((x) => x.index);
       const redSlots = turns.filter((x) => x.actor === "red").map((x) => x.index);
       const preferred = [...blueSlots, ...clashSlots, ...redSlots];
       enemySubpaths.forEach((eObj, i) => {
-        const slot =
-          i < blueSlots.length
-            ? blueSlots[i]
-            : enemySubpaths.length <= total
-            ? preferred[i % preferred.length] ?? Math.min(total - 1, i)
-            : Math.min(total - 1, Math.floor((i / enemySubpaths.length) * total));
+        const slot = i < blueSlots.length ? blueSlots[i] : preferred[i % preferred.length] ?? Math.min(total - 1, i);
         turns[slot].enemyIndices.push(eObj.idx);
-        if (turns[slot].actor === "red" && turns[slot].index === 0 && blueSlots.length === 0) {
-          turns[slot].actor = "clash";
-        }
       });
     }
 
-    // 将我方主路线按时间顺序分段或分批挂到红方/交锋回合
     const redTurns = turns.filter((x) => x.actor === "red" || x.actor === "clash");
     const targetRedTurns = redTurns.length > 0 ? redTurns : turns;
     if (redSubpaths.length === 1) {
@@ -1569,9 +1652,7 @@ export class MapRenderer {
       targetRedTurns.forEach((tObj, sIdx) => {
         const startI = sIdx === 0 ? 0 : Math.max(0, Math.floor((sIdx / segs) * (n - 1)) - 1);
         const endI = sIdx === segs - 1 ? n - 1 : Math.min(n - 1, Math.ceil(((sIdx + 1) / segs) * (n - 1)));
-        if (endI > startI) {
-          tObj.redSlices.push({ points: fullPts.slice(startI, endI + 1) });
-        }
+        if (endI > startI) tObj.redSlices.push({ points: fullPts.slice(startI, endI + 1) });
       });
     } else if (redSubpaths.length > 1) {
       redSubpaths.forEach((pts, rIdx) => {
@@ -1580,7 +1661,6 @@ export class MapRenderer {
       });
     }
 
-    // 关键战事标记按时间顺序在对应回合爆发，避免提前剧透
     markers.forEach((_, mIdx) => {
       const slot =
         markers.length === 1
@@ -1604,25 +1684,43 @@ export class MapRenderer {
     this.turnPlaying = false;
   }
 
+  scheduleTurnTimeout() {
+    if (this.turnTimer) clearTimeout(this.turnTimer);
+    if (!this.turnPlaying || this.turnMode !== "step") return;
+    if (this.currentTurn >= this.turns.length - 1) {
+      this.turnPlaying = false;
+      this.renderTurnHud();
+      return;
+    }
+    this.turnTimer = setTimeout(() => {
+      if (!this.turnPlaying || this.turnMode !== "step") return;
+      this.applyTurn(this.currentTurn + 1);
+    }, TURN_DURATION_MS);
+  }
+
+  scheduleNextTurnAfterSpeech() {
+    if (!this.turnPlaying || this.turnMode !== "step") return;
+    if (this.currentTurn >= this.turns.length - 1) {
+      this.turnPlaying = false;
+      this.renderTurnHud();
+      return;
+    }
+    if (this.turnTimer) clearTimeout(this.turnTimer);
+    this.turnTimer = setTimeout(() => {
+      if (!this.turnPlaying || this.turnMode !== "step") return;
+      this.applyTurn(this.currentTurn + 1);
+    }, 850);
+  }
+
   startTurnTimer() {
-    this.stopTurnTimer();
     if (this.turnMode !== "step" || this.turns.length <= 1) return;
     this.turnPlaying = true;
-    const scheduleNext = () => {
-      if (!this.turnPlaying || this.turnMode !== "step") return;
-      if (this.currentTurn >= this.turns.length - 1) {
-        this.turnPlaying = false;
-        this.renderTurnHud();
-        return;
-      }
-      this.turnTimer = setTimeout(() => {
-        if (!this.turnPlaying || this.turnMode !== "step") return;
-        this.applyTurn(this.currentTurn + 1);
-        scheduleNext();
-      }, TURN_DURATION_MS);
-    };
-    scheduleNext();
     this.renderTurnHud();
+    if (this.narrator.isEnabled()) {
+      this.speakCurrentTurn(() => this.scheduleNextTurnAfterSpeech());
+    } else {
+      this.scheduleTurnTimeout();
+    }
   }
 
   goToTurn(turnIdx) {
@@ -1633,10 +1731,75 @@ export class MapRenderer {
     this.applyTurn(clamped);
   }
 
+  clearCinematicBanner() {
+    if (this.bannerTimer) {
+      clearTimeout(this.bannerTimer);
+      this.bannerTimer = null;
+    }
+    this.bannerEl?.classList.remove("is-showing");
+    this.stageEl?.classList.remove("is-clash-spotlight");
+  }
+
+  showCinematicBanner(banner) {
+    this.clearCinematicBanner();
+    if (!banner || !this.bannerEl) return;
+    const lang = getLang();
+    const copy = banner[lang] || banner.zh || banner.en;
+    if (!copy) return;
+    const kEl = this.stageEl.querySelector("#cb-kicker");
+    const tEl = this.stageEl.querySelector("#cb-title");
+    const sEl = this.stageEl.querySelector("#cb-sub");
+    if (kEl) kEl.textContent = copy.kicker || "";
+    if (tEl) tEl.textContent = copy.title || "";
+    if (sEl) sEl.textContent = copy.sub || "";
+    void this.bannerEl.offsetWidth;
+    this.bannerEl.classList.add("is-showing");
+    this.stageEl.classList.add("is-clash-spotlight");
+    this.bannerTimer = setTimeout(() => {
+      this.bannerEl?.classList.remove("is-showing");
+      this.stageEl?.classList.remove("is-clash-spotlight");
+      this.bannerTimer = null;
+    }, 2500);
+  }
+
+  speakCurrentTurn(onDone) {
+    if (!this.narrator.isEnabled() || !this.battle) {
+      this.updateVoiceButton(false);
+      onDone?.();
+      return;
+    }
+    const lang = getLang();
+    const phase = this.battle.phases[this.currentPhase];
+    if (!phase) {
+      onDone?.();
+      return;
+    }
+    const isAll = this.turnMode === "all";
+    const turnIdx = isAll ? 0 : this.currentTurn;
+    const nextIdx = !isAll && turnIdx + 1 < this.turns.length ? turnIdx + 1 : null;
+    this.narrator.playClip({
+      battleId: this.battle.id,
+      phaseId: phase.id,
+      turnIndex: turnIdx,
+      lang,
+      nextTurnIndex: nextIdx,
+      onStart: () => this.updateVoiceButton(true),
+      onEnd: () => {
+        this.updateVoiceButton(false);
+        onDone?.();
+      }
+    });
+  }
+
   applyTurn(turnIdx) {
     if (!this.battle) return;
     const phase = this.battle.phases[this.currentPhase];
     if (!phase) return;
+
+    if (this.turnTimer) {
+      clearTimeout(this.turnTimer);
+      this.turnTimer = null;
+    }
 
     const isAll = turnIdx < 0 || this.turnMode === "all";
     this.currentTurn = isAll ? this.turns.length - 1 : Math.max(0, Math.min(this.turns.length - 1, turnIdx));
@@ -1654,9 +1817,26 @@ export class MapRenderer {
       }
     }
 
+    // 关键转折回合弹出电影级战报横幅 + 局部聚焦暗角
+    if (!isAll && activeTurn?.banner) {
+      this.showCinematicBanner(activeTurn.banner);
+    } else {
+      this.clearCinematicBanner();
+    }
+
     this.renderTurnHud();
     if (typeof this.onTurnChange === "function") {
       this.onTurnChange(isAll ? -1 : this.currentTurn, this.turns.length);
+    }
+
+    // 语音解说与战地音效同步：开启声音时等待男声解说完毕再推进下一回合
+    if (this.narrator.isEnabled()) {
+      if (!isAll && activeTurn?.sfx) {
+        this.narrator.playCue(activeTurn.sfx);
+      }
+      this.speakCurrentTurn(() => this.scheduleNextTurnAfterSpeech());
+    } else if (this.turnPlaying && !isAll) {
+      this.scheduleTurnTimeout();
     }
   }
 
@@ -1698,8 +1878,14 @@ export class MapRenderer {
     const redSubpaths = this.turns._redSubpaths || [];
     const enemySubpaths = this.turns._enemySubpaths || [];
 
+    // 地标按需呼吸：突出当前回合核心地标，弱化远方无关地名
+    const focusPlaces = !isAll && activeTurn?.focusPlaces?.length ? new Set(activeTurn.focusPlaces) : null;
     this.glLandmarks.forEach(({ el, loc }) => {
-      el.classList.toggle("is-key", (phase.keys || []).includes(loc.name));
+      const isKey = (phase.keys || []).includes(loc.name);
+      const isTurnFocus = focusPlaces ? focusPlaces.has(loc._rawName || loc.name) || focusPlaces.has(loc.name) : false;
+      el.classList.toggle("is-key", isKey);
+      el.classList.toggle("is-turn-focus", isTurnFocus);
+      el.classList.toggle("is-breathing-dim", !isAll && focusPlaces !== null && !isTurnFocus && !isKey);
     });
 
     const routeSpecs = [];
@@ -2001,6 +2187,8 @@ export class MapRenderer {
       this.glRaf = null;
     }
     this.stopTurnTimer();
+    this.narrator.stop();
+    this.clearCinematicBanner();
   }
 
   updateWarHudBase(phase) {
@@ -2148,6 +2336,8 @@ export class MapRenderer {
       if (this.hudCompassNeedleEl) {
         this.hudCompassNeedleEl.style.transform = `rotate(${this.glCam.yaw.toFixed(1)}deg)`;
       }
+      // 放大视角时自动展开全部呼吸收拢的兵牌与地名
+      this.stageEl.classList.toggle("is-zoomed-in", this.glCam.zoom >= 1.4);
 
       // 更新回合进度细条
       if (this.turnProgressFillEl && this.turnMode === "step") {

@@ -1,10 +1,10 @@
 // 战史沙盘 · 应用入口
 // 负责路由（档案馆 / 战役沙盘）、主题切换与各章节渲染；地图交互交由 MapRenderer。
 
-import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=12";
-import { normalizeBattle } from "./engine/schema.js?v=12";
-import { MapRenderer } from "./engine/mapRenderer.js?v=12";
-import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=2";
+import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=13";
+import { normalizeBattle } from "./engine/schema.js?v=13";
+import { MapRenderer } from "./engine/mapRenderer.js?v=14";
+import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=3";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];

@@ -83,6 +83,9 @@ const DICT = {
     turnActorClash: "双方交锋",
     turnLabelPrefix: "第",
     turnLabelSuffix: "回合",
+    voiceTitleOn: "关闭男声解说",
+    voiceTitleOff: "开启标准普通话浑厚男声解说",
+    voiceUnsupported: "当前浏览器不支持语音合成",
 
     // Layer toggles & HUD
     layerFormations: "部队",
@@ -225,6 +228,9 @@ const DICT = {
     turnActorClash: "Engagement",
     turnLabelPrefix: "Turn ",
     turnLabelSuffix: "",
+    voiceTitleOn: "Mute Voice Narration",
+    voiceTitleOff: "Play Deep American Male Voice Narration",
+    voiceUnsupported: "Speech synthesis not supported in this browser",
 
     // Layer toggles & HUD
     layerFormations: "Units",

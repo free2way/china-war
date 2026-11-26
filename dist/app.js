@@ -3,8 +3,8 @@
 
 import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=13";
 import { normalizeBattle } from "./engine/schema.js?v=13";
-import { MapRenderer } from "./engine/mapRenderer.js?v=14";
-import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=3";
+import { MapRenderer } from "./engine/mapRenderer.js?v=15";
+import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=4";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];

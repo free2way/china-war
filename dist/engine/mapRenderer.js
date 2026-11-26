@@ -3,7 +3,7 @@
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
 import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=13";
-import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=3";
+import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=4";
 import { VoiceNarrator } from "./voiceNarrator.js?v=2";
 import { getPhaseTurnScript } from "../data/turnScripts.js?v=1";
 
@@ -344,6 +344,10 @@ export class MapRenderer {
     this.turnProgressFillEl = stageEl.querySelector("#turn-progress-fill");
     this.bannerEl = stageEl.querySelector("#cinematic-banner");
     this.voiceBtnEl = stageEl.querySelector("#turn-voice-btn");
+    this.castEl = stageEl.querySelector("#live-commentary");
+    this.castFeedEl = stageEl.querySelector("#live-cast-feed");
+    this.castStepEl = stageEl.querySelector("#live-cast-step");
+    this.castToggleEl = stageEl.querySelector("#live-cast-toggle");
     this.narrator = new VoiceNarrator();
     this.bannerTimer = null;
     this.stageEl.classList.toggle("has-webgl", this.terrain3d.ready);
@@ -586,6 +590,18 @@ export class MapRenderer {
       }
     });
     this.updateVoiceButton();
+
+    // 左上角游戏直播风格实况解说框：独立滚动不触发沙盘缩放，支持一键折叠
+    if (this.castEl) {
+      this.castEl.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
+      this.castEl.addEventListener("pointerdown", (e) => e.stopPropagation());
+    }
+    this.castToggleEl?.addEventListener("click", () => {
+      if (!this.castEl) return;
+      const collapsed = this.castEl.classList.toggle("is-collapsed");
+      this.castToggleEl.textContent = collapsed ? "+" : "−";
+      this.castToggleEl.setAttribute("aria-expanded", String(!collapsed));
+    });
   }
 
   updateVoiceButton(isSpeaking = false) {
@@ -2257,10 +2273,11 @@ export class MapRenderer {
       if (isAll) {
         tickerEl.textContent = `${phase?.name || ""} — ${t("turnOverviewLabel")}`;
       } else if (activeTurn) {
-        tickerEl.textContent = `${activeTurn.date ? `${activeTurn.date} · ` : ""}${activeTurn.title} — ${activeTurn.desc}`;
+        tickerEl.textContent = `${activeTurn.date ? `${activeTurn.date} · ` : ""}${activeTurn.title}`;
       }
       tickerEl.classList.add("is-ticking");
     }
+    this.renderLiveCommentary(isAll);
     if (playBtn) {
       playBtn.textContent = this.turnPlaying && !isAll ? "⏸" : "▶";
       playBtn.title = this.turnPlaying && !isAll ? t("turnPause") : t("turnPlay");
@@ -2297,6 +2314,48 @@ export class MapRenderer {
     if (this.turnProgressFillEl) {
       this.turnProgressFillEl.style.width = isAll ? "100%" : "0%";
     }
+  }
+
+  renderLiveCommentary(isAll = false) {
+    if (!this.castFeedEl || !this.battle) return;
+    const lang = getLang();
+    const totalTurns = Math.max(1, this.turns.length);
+    if (this.castStepEl) {
+      this.castStepEl.textContent = isAll ? t("turnOverview") : `${this.currentTurn + 1}/${totalTurns}`;
+    }
+    if (this.castToggleEl) {
+      this.castToggleEl.title = t("castCollapseTitle");
+    }
+
+    const visibleTurns = isAll ? this.turns : this.turns.slice(0, this.currentTurn + 1);
+    const actorLabel = (actor) =>
+      actor === "blue" ? t("turnActorBlue") : actor === "clash" ? t("turnActorClash") : t("turnActorRed");
+
+    this.castFeedEl.innerHTML = visibleTurns
+      .map((tObj, idx) => {
+        const isActive = !isAll && idx === this.currentTurn;
+        const body = tObj.narration?.[lang] || tObj.desc || "";
+        return `
+          <button type="button" class="live-cast-item actor-${tObj.actor || "red"}${isActive ? " is-active" : ""}" data-cast-turn="${tObj.index}">
+            <div class="live-cast-meta">
+              <span class="live-cast-tag">${actorLabel(tObj.actor)}</span>
+              ${tObj.date ? `<span class="live-cast-time">${tObj.date}</span>` : ""}
+              <span class="live-cast-headline">${tObj.title || ""}</span>
+            </div>
+            <p class="live-cast-body">${body}</p>
+          </button>`;
+      })
+      .join("");
+
+    this.castFeedEl.querySelectorAll("[data-cast-turn]").forEach((btn) => {
+      btn.addEventListener("click", () => this.goToTurn(Number(btn.dataset.castTurn)));
+    });
+
+    // 平滑滚动至最新一条解说（游戏直播实况滚动感）
+    requestAnimationFrame(() => {
+      if (!this.castFeedEl) return;
+      this.castFeedEl.scrollTo({ top: this.castFeedEl.scrollHeight, behavior: "smooth" });
+    });
   }
 
   samplePolylineAt(points, tNorm) {

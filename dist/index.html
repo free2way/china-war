@@ -6,7 +6,7 @@
     <meta name="description" content="战史沙盘：以三维立体交互方式推演古今中外著名战役——四渡赤水、官渡之战、长津湖战役、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
     <title>战史沙盘｜世界历史著名战役三维交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=13" />
+    <link rel="stylesheet" href="./styles.css?v=15" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
@@ -101,6 +101,15 @@
         <div class="map-stage is-3d" id="map-stage" data-map-style="game" aria-label="三维动态战役沙盘">
           <div class="stage-reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
           <div class="stage-spotlight" id="stage-spotlight" aria-hidden="true"></div>
+          <aside class="live-commentary" id="live-commentary" aria-live="polite" aria-label="战地实况解说">
+            <header class="live-cast-head">
+              <span class="live-cast-dot" aria-hidden="true"></span>
+              <strong id="live-cast-title" data-i18n="castTitle">战地实况解说</strong>
+              <span class="live-cast-step" id="live-cast-step">1/4</span>
+              <button type="button" class="live-cast-toggle" id="live-cast-toggle" aria-expanded="true" title="收起/展开实况解说框">−</button>
+            </header>
+            <div class="live-cast-feed" id="live-cast-feed"></div>
+          </aside>
           <div class="cinematic-banner" id="cinematic-banner" aria-hidden="true">
             <span class="cb-kicker" id="cb-kicker"></span>
             <strong class="cb-title" id="cb-title"></strong>
@@ -389,6 +398,6 @@
       <p data-i18n="footerDisclaimer">地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=14"></script>
+    <script type="module" src="./app.js?v=15"></script>
   </body>
 </html>

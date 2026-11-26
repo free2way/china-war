@@ -86,6 +86,9 @@ const DICT = {
     voiceTitleOn: "关闭男声解说",
     voiceTitleOff: "开启标准普通话浑厚男声解说",
     voiceUnsupported: "当前浏览器不支持语音合成",
+    castTitle: "战地实况解说",
+    castCollapseTitle: "收起/展开实况解说框",
+    castOverviewTip: "当前处于全览模式，展示本阶段全部调度与战况。",
 
     // Layer toggles & HUD
     layerFormations: "部队",
@@ -231,6 +234,9 @@ const DICT = {
     voiceTitleOn: "Mute Voice Narration",
     voiceTitleOff: "Play Deep American Male Voice Narration",
     voiceUnsupported: "Speech synthesis not supported in this browser",
+    castTitle: "LIVE COMMENTARY",
+    castCollapseTitle: "Collapse or expand live commentary box",
+    castOverviewTip: "Overview mode: displaying all maneuvers and engagements for this phase.",
 
     // Layer toggles & HUD
     layerFormations: "Units",

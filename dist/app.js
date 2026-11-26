@@ -1,23 +1,24 @@
 // 战史沙盘 · 应用入口
 // 负责路由（档案馆 / 战役沙盘）、主题切换与各章节渲染；地图交互交由 MapRenderer。
 
-import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=13";
-import { normalizeBattle } from "./engine/schema.js?v=13";
-import { MapRenderer } from "./engine/mapRenderer.js?v=15";
-import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=4";
+import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=16";
+import { normalizeBattle } from "./engine/schema.js?v=16";
+import { MapRenderer } from "./engine/mapRenderer.js?v=17";
+import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=5";
+import { GUIDED_TOURS, resolveEventId } from "./data/eventMeta.js?v=2";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const pad = (n) => String(n).padStart(2, "0");
-const TOUR_INTERVAL = 4200;
 
 const state = {
   battleId: null,
   battle: null,
   phase: 0,
+  eventId: null,
+  tourId: null,
   orderSide: "red",
-  eraFilter: "all",
-  tourTimer: null
+  eraFilter: "all"
 };
 
 let mapRenderer = null;
@@ -75,7 +76,7 @@ function applyStaticI18n() {
   const compassSvg = $("#compass-n-svg");
   if (compassSvg) compassSvg.textContent = t("compassNorth");
   const playLabel = $("#play-tour .play-label");
-  if (playLabel) playLabel.textContent = state.tourTimer ? t("pauseTour") : t("playTour");
+  if (playLabel) playLabel.textContent = mapRenderer?.isUnifiedPlaying?.() ? t("pauseTour") : t("playTour");
   const prevBtn = $("#phase-prev");
   const nextBtn = $("#phase-next");
   if (prevBtn) prevBtn.setAttribute("aria-label", t("phasePrev"));
@@ -192,22 +193,35 @@ function bindHomeLinks(root = document) {
   });
 }
 
-/* ---------------- 路由 ---------------- */
+/* ---------------- 路由与分享深链 ---------------- */
 
-function navigate(battleId) {
+function syncUrl({ battleId = state.battleId, eventId = state.eventId, tourId = state.tourId, push = false } = {}) {
   const url = new URL(window.location.href);
   url.hash = "";
   if (battleId) url.searchParams.set("battle", battleId);
   else url.searchParams.delete("battle");
-  window.history.pushState({ battle: battleId }, "", url.toString());
+  if (battleId && eventId) url.searchParams.set("event", eventId);
+  else url.searchParams.delete("event");
+  if (battleId && tourId) url.searchParams.set("tour", tourId);
+  else url.searchParams.delete("tour");
+  if (push) window.history.pushState({ battle: battleId, event: eventId, tour: tourId }, "", url.toString());
+  else window.history.replaceState({ battle: battleId, event: eventId, tour: tourId }, "", url.toString());
+}
+
+function navigate(battleId, { eventId = null, tourId = null } = {}) {
+  syncUrl({ battleId, eventId, tourId, push: true });
   route({ scrollTop: true });
 }
 
 async function route(options = {}) {
-  const id = new URLSearchParams(window.location.search).get("battle");
+  const params = new URLSearchParams(window.location.search);
+  const tourParam = params.get("tour");
+  const tour = tourParam && GUIDED_TOURS[tourParam] ? GUIDED_TOURS[tourParam] : null;
+  const id = params.get("battle") || tour?.battleId || null;
+  const eventId = params.get("event") || tour?.startEventId || null;
   const entry = id ? getBattleEntry(id) : null;
   if (entry && entry.status === "available") {
-    await showBattle(id);
+    await showBattle(id, { eventId, tourId: tour ? tour.id : null });
   } else {
     showHome();
   }
@@ -215,10 +229,12 @@ async function route(options = {}) {
 }
 
 function showHome() {
-  stopTour();
+  mapRenderer?.pauseUnified();
   mapRenderer?.stopRouteMovers();
   state.battleId = null;
   state.battle = null;
+  state.eventId = null;
+  state.tourId = null;
   applyTheme(null);
   document.body.dataset.view = "home";
   $("#view-home").hidden = false;
@@ -234,12 +250,21 @@ function showHome() {
   setupReveal();
 }
 
-async function showBattle(id, { forceReload = false, preservePhase = false } = {}) {
-  stopTour();
-  const prevPhase = preservePhase ? state.phase : 0;
-  const prevOrderSide = preservePhase ? state.orderSide : "red";
+async function showBattle(id, { forceReload = false, preserveEvent = false, eventId = null, tourId = null } = {}) {
+  mapRenderer?.pauseUnified();
+  const targetEventId = preserveEvent ? state.eventId : eventId;
+  const targetTourId = preserveEvent ? state.tourId : tourId;
+  const prevOrderSide = preserveEvent ? state.orderSide : "red";
   if (!forceReload && state.battleId === id && state.battle) {
     document.body.dataset.view = "battle";
+    if (targetTourId && GUIDED_TOURS[targetTourId]) {
+      state.tourId = targetTourId;
+      mapRenderer.setGuidedTour(GUIDED_TOURS[targetTourId]);
+    }
+    if (targetEventId) {
+      const resolved = resolveEventId(state.battle, targetEventId);
+      if (resolved) mapRenderer.goToScene(resolved.phaseIndex, resolved.turnIndex, { autoPlay: Boolean(targetTourId) });
+    }
     return;
   }
 
@@ -262,13 +287,20 @@ async function showBattle(id, { forceReload = false, preservePhase = false } = {
 
   state.battleId = id;
   state.battle = battle;
-  state.phase = Math.min(prevPhase, Math.max(0, battle.phases.length - 1));
+  state.tourId = targetTourId && GUIDED_TOURS[targetTourId]?.battleId === id ? targetTourId : null;
   state.orderSide = prevOrderSide;
+
+  const resolved = targetEventId ? resolveEventId(battle, targetEventId) : null;
+  const initialPhase = resolved ? resolved.phaseIndex : 0;
+  const initialTurn = resolved ? resolved.turnIndex : 0;
+  state.phase = initialPhase;
 
   applyTheme(battle.theme);
   document.body.dataset.view = "battle";
   $("#view-home").hidden = true;
   $("#view-battle").hidden = false;
+  $("#sandtable")?.classList.remove("is-mobile-brief-open");
+  $("#mobile-brief-btn")?.setAttribute("aria-expanded", "false");
 
   document.title = `${battle.title}${t("battleTitleSuffix")}`;
   $('meta[name="description"]')?.setAttribute(
@@ -280,9 +312,12 @@ async function showBattle(id, { forceReload = false, preservePhase = false } = {
   $("#switcher-seal").textContent = battle.seal;
   $("#switcher-kicker").textContent = `${t("switcherArchivePrefix")} ${pad(index + 1)}`;
   $("#switcher-name").textContent = battle.title;
+  const mobileTitle = $("#mobile-battle-title");
+  if (mobileTitle) mobileTitle.textContent = battle.title;
 
   renderHero(battle);
   mapRenderer.renderBattle(battle);
+  mapRenderer.setGuidedTour(state.tourId ? GUIDED_TOURS[state.tourId] : null);
   mapRenderer.refreshLanguage();
   $("#map-scale").textContent = battle.mapConfig.scaleNote || "";
   renderPhaseControls(battle);
@@ -295,7 +330,10 @@ async function showBattle(id, { forceReload = false, preservePhase = false } = {
   renderFooter(battle);
   renderBattleMenu();
 
-  setPhase(state.phase);
+  // 打开分享深链（有 ?event= 且无 ?tour=）时精准停留在那一幕；导览模式或默认进入时平滑自动播放
+  const shouldAutoPlay = Boolean(state.tourId) || (!targetEventId && !preserveEvent);
+  syncPhaseChrome(initialPhase);
+  mapRenderer.goToScene(initialPhase, initialTurn, { autoPlay: shouldAutoPlay, continuous: Boolean(state.tourId) });
   setupReveal();
   requestAnimationFrame(() => document.body.classList.remove("is-loading"));
 }
@@ -330,8 +368,7 @@ function renderPhaseControls(battle) {
     .join("");
   $$(".phase-button", container).forEach((btn) =>
     btn.addEventListener("click", () => {
-      stopTour();
-      setPhase(Number(btn.dataset.phase));
+      mapRenderer?.goToScene(Number(btn.dataset.phase), 0, { autoPlay: true });
     })
   );
   $("#brief-total").textContent = `/ ${pad(battle.phases.length)}`;
@@ -351,6 +388,8 @@ function renderBrief(phase, index) {
     $("#float-brief-date").textContent = phase.date;
     $("#float-brief-goal").textContent = phase.goal;
   }
+  const mobilePhaseTag = $("#mobile-phase-tag");
+  if (mobilePhaseTag) mobilePhaseTag.textContent = `${pad(index + 1)} · ${phase.short || phase.name}`;
   const brief = $(".battle-brief");
   brief.classList.remove("is-swapping");
   void brief.offsetWidth;
@@ -395,7 +434,6 @@ function renderDossier(battle, index) {
     .join("");
   $$("#dossier-list .dossier-row").forEach((row) => {
     const jump = () => {
-      stopTour();
       mapRenderer?.goToTurn(Number(row.dataset.turnIdx));
       $("#sandtable").scrollIntoView({ behavior: "smooth" });
     };
@@ -416,8 +454,7 @@ function renderDossier(battle, index) {
     .join("");
   $$("[data-dossier-phase]", tabs).forEach((btn) =>
     btn.addEventListener("click", () => {
-      stopTour();
-      setPhase(Number(btn.dataset.dossierPhase));
+      mapRenderer?.goToScene(Number(btn.dataset.dossierPhase), 0, { autoPlay: false });
     })
   );
 }
@@ -498,8 +535,7 @@ function renderChronicle(battle) {
     .join("");
   $$("#timeline-list button[data-phase]").forEach((btn) =>
     btn.addEventListener("click", () => {
-      stopTour();
-      setPhase(Number(btn.dataset.phase));
+      mapRenderer?.goToScene(Number(btn.dataset.phase), 0, { autoPlay: false });
       $("#sandtable").scrollIntoView({ behavior: "smooth" });
     })
   );
@@ -520,9 +556,9 @@ function renderFooter(battle) {
     battle.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noreferrer">${s.title}</a>`).join("");
 }
 
-/* ---------------- 阶段与推演 ---------------- */
+/* ---------------- 统一阶段与播放控制器同步 ---------------- */
 
-function setPhase(index) {
+function syncPhaseChrome(index) {
   const battle = state.battle;
   if (!battle) return;
   const total = battle.phases.length;
@@ -531,7 +567,6 @@ function setPhase(index) {
 
   renderBrief(phase, state.phase);
   renderDossier(battle, state.phase);
-  mapRenderer.setPhase(state.phase);
 
   $("#phase-progress-bar").style.width = `${((state.phase + 1) / total) * 100}%`;
   $$(".phase-button").forEach((btn, i) => {
@@ -543,47 +578,61 @@ function setPhase(index) {
   $("#phase-next").disabled = state.phase === total - 1;
 }
 
-function stopTour() {
-  if (state.tourTimer) {
-    clearInterval(state.tourTimer);
-    state.tourTimer = null;
-  }
+function syncPlayButton(playing) {
   const btn = $("#play-tour");
-  btn.classList.remove("is-playing");
-  $(".play-label", btn).textContent = t("playTour");
+  if (!btn) return;
+  btn.classList.toggle("is-playing", Boolean(playing));
+  $(".play-label", btn).textContent = playing ? t("pauseTour") : t("playTour");
 }
 
-function startTour() {
+function handlePlaybackEvent({ phaseIndex, turnIndex, eventId, playing, tourExited }) {
   if (!state.battle) return;
-  const total = state.battle.phases.length;
-  if (state.phase >= total - 1) setPhase(0);
-  const btn = $("#play-tour");
-  btn.classList.add("is-playing");
-  $(".play-label", btn).textContent = t("pauseTour");
-  state.tourTimer = setInterval(() => {
-    if (state.phase >= total - 1) return stopTour();
-    setPhase(state.phase + 1);
-  }, TOUR_INTERVAL);
+  if (phaseIndex !== state.phase) {
+    syncPhaseChrome(phaseIndex);
+  }
+  state.eventId = eventId || null;
+  if (tourExited) state.tourId = null;
+  highlightDossierTurn(turnIndex);
+  syncPlayButton(playing);
+  syncUrl({ battleId: state.battleId, eventId: state.eventId, tourId: state.tourId, push: false });
 }
 
 /* ---------------- 全局事件 ---------------- */
 
 function setupGlobalEvents() {
-  $("#play-tour").addEventListener("click", () => (state.tourTimer ? stopTour() : startTour()));
+  $("#play-tour").addEventListener("click", () => mapRenderer?.toggleUnifiedPlay({ continuous: true }));
   $("#phase-prev").addEventListener("click", () => {
-    stopTour();
-    setPhase(state.phase - 1);
+    mapRenderer?.goToScene(Math.max(0, state.phase - 1), 0, { autoPlay: false });
   });
   $("#phase-next").addEventListener("click", () => {
-    stopTour();
-    setPhase(state.phase + 1);
+    if (!state.battle) return;
+    mapRenderer?.goToScene(Math.min(state.battle.phases.length - 1, state.phase + 1), 0, { autoPlay: false });
+  });
+
+  // 首页精选导览直达按钮（三渡 → 四渡 90 秒导览 & 诺曼底多滩对照验证）
+  $$("[data-tour-launch]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tour = GUIDED_TOURS[btn.dataset.tourLaunch];
+      if (!tour) return;
+      navigate(tour.battleId, { eventId: tour.startEventId, tourId: tour.id });
+    });
+  });
+
+  // 移动端简报抽屉展开/收起
+  $("#mobile-brief-btn")?.addEventListener("click", () => {
+    const sec = $("#sandtable");
+    const btn = $("#mobile-brief-btn");
+    if (!sec || !btn) return;
+    const open = sec.classList.toggle("is-mobile-brief-open");
+    btn.setAttribute("aria-expanded", String(open));
+    btn.textContent = open ? t("mobileBriefClose") : t("mobileBriefBtn");
   });
 
   $("#lang-toggle")?.addEventListener("click", async () => {
     setLang(isEn() ? "zh" : "en");
     applyStaticI18n();
     if (state.battleId) {
-      await showBattle(state.battleId, { forceReload: true, preservePhase: true });
+      await showBattle(state.battleId, { forceReload: true, preserveEvent: true });
     } else {
       showHome();
     }
@@ -622,14 +671,12 @@ function setupGlobalEvents() {
     if (e.key === "Escape") closeMenu();
     if (!state.battle || e.target.closest("input, textarea")) return;
     if (e.key === "ArrowRight") {
-      stopTour();
-      setPhase(state.phase + 1);
+      mapRenderer?.stepScene(1);
     } else if (e.key === "ArrowLeft") {
-      stopTour();
-      setPhase(state.phase - 1);
+      mapRenderer?.stepScene(-1);
     } else if (e.key === " " && e.target === document.body) {
       e.preventDefault();
-      state.tourTimer ? stopTour() : startTour();
+      mapRenderer?.toggleUnifiedPlay({ continuous: true });
     }
   });
 
@@ -697,7 +744,7 @@ function setupReveal() {
 function init() {
   applyStaticI18n();
   mapRenderer = new MapRenderer($("#map-stage"));
-  mapRenderer.onTurnChange = (turnIdx) => highlightDossierTurn(turnIdx);
+  mapRenderer.onEventChange = (evt) => handlePlaybackEvent(evt);
   mapRenderer.refreshLanguage();
   renderArchive();
   setupGlobalEvents();

@@ -6,7 +6,7 @@
     <meta name="description" content="战史沙盘：以三维立体交互方式推演古今中外著名战役——四渡赤水、官渡之战、长津湖战役、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
     <title>战史沙盘｜世界历史著名战役三维交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=15" />
+    <link rel="stylesheet" href="./styles.css?v=17" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
@@ -42,13 +42,60 @@
     <main id="view-home" class="view view-home">
       <section class="home-hero">
         <div class="home-hero-bg" aria-hidden="true"></div>
-        <div class="home-hero-copy">
-          <p class="eyebrow"><span data-i18n="homeEyebrow">世界战争史 · 中外经典战役交互沙盘</span></p>
-          <h1 id="home-title">观<span class="accent">兵</span>形之变，<br />读胜负之机。</h1>
-          <p class="home-deck" data-i18n="homeDeck">
-            跨越古今中外，每一场著名战役都是一盘在时间与地理中展开的沙盘。选择一份战役档案，按阶段推演双方部署、机动路线与决策逻辑。
-          </p>
-          <div class="home-stats" id="home-stats"></div>
+        <div class="home-hero-grid">
+          <div class="home-hero-copy">
+            <p class="eyebrow"><span data-i18n="homeEyebrow">世界战争史 · 中外经典战役交互沙盘</span></p>
+            <h1 id="home-title">观<span class="accent">兵</span>形之变，<br />读胜负之机。</h1>
+            <p class="home-deck" data-i18n="homeDeck">
+              跨越古今中外，每一场著名战役都是一盘在时间与地理中展开的沙盘。选择一份战役档案，按阶段推演双方部署、机动路线与决策逻辑。
+            </p>
+            <div class="home-stats" id="home-stats"></div>
+          </div>
+
+          <aside class="home-flagship" aria-label="精选导览入口">
+            <div class="flagship-map-preview" aria-hidden="true">
+              <svg viewBox="0 0 360 210" role="presentation">
+                <defs>
+                  <linearGradient id="fs-bg" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#192622" />
+                    <stop offset="100%" stop-color="#0f1512" />
+                  </linearGradient>
+                  <linearGradient id="fs-red" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#ff9a5c" />
+                    <stop offset="100%" stop-color="#e2513f" />
+                  </linearGradient>
+                </defs>
+                <rect width="360" height="210" rx="10" fill="url(#fs-bg)" />
+                <path d="M18 46 Q95 28 168 58 T342 44 M18 110 Q112 88 205 118 T342 104 M18 168 Q120 148 220 176 T342 162" fill="none" stroke="rgba(232,226,210,.08)" stroke-width="1" />
+                <!-- 赤水河与乌江 -->
+                <path d="M158 14 C146 56 154 88 138 124 C126 152 134 178 120 198" fill="none" stroke="#6aa6b8" stroke-width="4.5" stroke-linecap="round" opacity=".72" />
+                <path d="M174 196 C218 176 266 184 332 194" fill="none" stroke="#6aa6b8" stroke-width="3" stroke-linecap="round" opacity=".5" />
+                <!-- 国民党军西移古蔺（蓝虚线） -->
+                <path d="M254 128 C210 112 162 84 96 64" fill="none" stroke="#7eb4d6" stroke-width="2" stroke-dasharray="5 5" opacity=".78" />
+                <circle cx="96" cy="64" r="4" fill="#7eb4d6" />
+                <!-- 三渡：茅台公开西渡 -->
+                <path d="M224 134 C194 132 168 124 142 114 C122 106 106 88 86 64" fill="none" stroke="#e2513f" stroke-width="2.4" stroke-dasharray="4 4" opacity=".52" />
+                <!-- 四渡：二郎滩秘密折返东渡南下乌江 -->
+                <path d="M88 66 C116 86 138 100 156 116 C182 138 206 154 226 182" fill="none" stroke="url(#fs-red)" stroke-width="3.6" stroke-linecap="round" />
+                <polygon points="231,187 220,183 227,175" fill="#ffb169" />
+                <circle cx="144" cy="116" r="4.5" fill="#fff" stroke="#e2513f" stroke-width="2" />
+                <circle cx="154" cy="100" r="4" fill="#ffd166" stroke="#141815" stroke-width="1.5" />
+                <text x="54" y="54" fill="#9ed4fa" font-size="10" font-family="sans-serif">古蔺 · 敌重兵西移</text>
+                <text x="166" y="102" fill="#ffe29a" font-size="10" font-family="sans-serif">二郎滩 · 秘密东渡</text>
+                <text x="152" y="132" fill="#f2ece0" font-size="9.5" opacity=".8" font-family="sans-serif">茅台</text>
+                <text x="236" y="188" fill="#ffb478" font-size="10" font-family="sans-serif">南渡乌江</text>
+              </svg>
+            </div>
+            <div class="flagship-copy">
+              <span class="flagship-eyebrow" data-i18n="homeFlagshipEyebrow">推荐体验 · 90 秒核心导览</span>
+              <h3 data-i18n="homeFlagshipTitle">三渡 → 四渡赤水：如何用一次佯动调开四十万大军？</h3>
+              <p data-i18n="homeFlagshipDeck">同比例同视角前后对照：看清茅台西渡如何把敌军主力吸向古蔺，主力再连夜折返二郎滩跳出合围。</p>
+              <div class="flagship-actions">
+                <button type="button" class="flagship-cta" data-tour-launch="chishui-3-4" data-i18n="homeFlagshipCta">观看三渡到四渡 →</button>
+                <button type="button" class="flagship-secondary" data-tour-launch="normandy-dday" data-i18n="homeFlagshipNormandy">诺曼底多滩对照验证 →</button>
+              </div>
+            </div>
+          </aside>
         </div>
       </section>
 
@@ -74,7 +121,16 @@
       <section class="sandtable" id="sandtable" aria-labelledby="hero-title">
         <div class="sandtable-bg" aria-hidden="true"></div>
 
-        <div class="sandtable-side">
+        <!-- 移动端紧凑首屏标题栏（保证 390x844 首屏直接看见地图与底部播放控制） -->
+        <div class="mobile-battle-bar" id="mobile-battle-bar">
+          <div class="mobile-battle-meta">
+            <strong id="mobile-battle-title">战史沙盘</strong>
+            <small id="mobile-phase-tag"></small>
+          </div>
+          <button type="button" class="mobile-brief-toggle" id="mobile-brief-btn" aria-expanded="false" data-i18n="mobileBriefBtn">简报</button>
+        </div>
+
+        <div class="sandtable-side" id="sandtable-side">
           <div class="hero-copy">
             <p class="eyebrow" id="hero-eyebrow"></p>
             <h1 id="hero-title"></h1>
@@ -101,37 +157,74 @@
         <div class="map-stage is-3d" id="map-stage" data-map-style="game" aria-label="三维动态战役沙盘">
           <div class="stage-reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
           <div class="stage-spotlight" id="stage-spotlight" aria-hidden="true"></div>
-          <aside class="live-commentary" id="live-commentary" aria-live="polite" aria-label="战地实况解说">
-            <header class="live-cast-head">
-              <span class="live-cast-dot" aria-hidden="true"></span>
-              <strong id="live-cast-title" data-i18n="castTitle">战地实况解说</strong>
-              <span class="live-cast-step" id="live-cast-step">1/4</span>
-              <button type="button" class="live-cast-toggle" id="live-cast-toggle" aria-expanded="true" title="收起/展开实况解说框">−</button>
-            </header>
-            <div class="live-cast-feed" id="live-cast-feed"></div>
-          </aside>
+
+          <!-- 左上统一 HUD 叠层：导览/对照状态条 + 实况解说框顺序排布，永不重叠 -->
+          <div class="stage-hud-stack" id="stage-hud-stack">
+            <div class="stage-context-strip" id="stage-context-strip">
+              <div class="tour-pill" id="tour-pill" hidden>
+                <span class="tour-pill-dot" aria-hidden="true"></span>
+                <span id="tour-pill-text">精选 90 秒导览 · 三渡 → 四渡</span>
+                <button type="button" id="tour-exit-btn" data-i18n="tourExitBtn">退出导览</button>
+              </div>
+              <div class="compare-pill" id="compare-pill" hidden></div>
+            </div>
+
+            <aside class="live-commentary" id="live-commentary" aria-live="polite" aria-label="战地实况解说">
+              <header class="live-cast-head">
+                <span class="live-cast-dot" aria-hidden="true"></span>
+                <strong id="live-cast-title" data-i18n="castTitle">战地实况解说</strong>
+                <span class="live-cast-step" id="live-cast-step">1/4</span>
+                <button type="button" class="live-cast-source-btn" id="live-cast-source-btn" aria-expanded="false" data-i18n="sourceBtn">史料依据</button>
+                <button type="button" class="live-cast-toggle" id="live-cast-toggle" aria-expanded="true" title="收起/展开实况解说框">−</button>
+              </header>
+              <div class="live-cast-feed" id="live-cast-feed"></div>
+              <div class="live-cast-sources" id="live-cast-sources" hidden></div>
+              <footer class="live-cast-precision" id="live-cast-precision"></footer>
+            </aside>
+          </div>
           <div class="cinematic-banner" id="cinematic-banner" aria-hidden="true">
             <span class="cb-kicker" id="cb-kicker"></span>
             <strong class="cb-title" id="cb-title"></strong>
             <p class="cb-sub" id="cb-sub"></p>
           </div>
+
+          <!-- 精简顶栏：主视图保持清爽，视角/阵营/图层收进「地图设置」浮层 -->
           <div class="map-toolbar">
-            <div class="map-filters" role="group" aria-label="阵营筛选"></div>
-            <div class="map-view-controls" role="group" aria-label="三维视角控制">
-              <button type="button" class="is-active" data-view-mode="3d" data-i18n="btn3d" data-i18n-title="btn3dTitle" title="三维立体起伏地形">3D 沙盘</button>
-              <button type="button" data-cam-action="low-fly" data-i18n="btnLowFly" data-i18n-title="btnLowFlyTitle" title="低空临境观察山势">低空</button>
-              <button type="button" class="is-active" data-cam-action="auto-cam" aria-pressed="true" data-i18n="btnAutoCam" data-i18n-title="btnAutoCamTitle" title="切换阶段时电影运镜自动聚焦战区">运镜</button>
-              <button type="button" class="is-active" data-cam-action="toggle-style" aria-pressed="true" data-i18n-title="btnStyleTitle" title="切换策略游戏地图风 / 写实纪录片风">游戏风</button>
-              <button type="button" data-view-mode="2d" data-i18n="btn2d" data-i18n-title="btn2dTitle" title="二维平面地图">2D 平面</button>
-              <span class="toolbar-sep" aria-hidden="true"></span>
-              <button type="button" data-cam-action="zoom-out" aria-label="缩小视角" data-i18n-title="btnZoomOut" title="缩小">−</button>
-              <button type="button" data-cam-action="zoom-in" aria-label="放大视角" data-i18n-title="btnZoomIn" title="放大">＋</button>
-              <button type="button" data-cam-action="reset" aria-label="重置视角" data-i18n-title="btnReset" title="重置视角">↺</button>
-              <span class="toolbar-sep" aria-hidden="true"></span>
-              <button type="button" data-cam-action="expand" id="stage-expand-btn" aria-pressed="false" data-i18n-title="btnBriefTitle" title="展开/收起全屏沙盘">⛶ 大屏</button>
+            <div class="map-toolbar-spacer"></div>
+            <div class="map-quick-actions">
+              <button type="button" class="map-action-pill" id="share-scene-btn" data-i18n-title="shareTitle" title="复制当前一幕的直达链接">
+                <span aria-hidden="true">🔗</span><span data-i18n="shareBtn">分享</span>
+              </button>
+              <button type="button" class="map-action-pill" data-cam-action="expand" id="stage-expand-btn" aria-pressed="false" data-i18n-title="btnBriefTitle" title="展开/收起全屏沙盘">⛶ 大屏</button>
+              <div class="map-settings-wrap" id="map-settings-wrap">
+                <button type="button" class="map-action-pill" id="map-settings-btn" aria-haspopup="true" aria-expanded="false" data-i18n="settingsBtn" data-i18n-title="settingsTitle" title="展开/收起视角、阵营与图层设置">⚙ 地图设置</button>
+                <div class="map-settings-panel" id="map-settings-panel" hidden>
+                  <div class="settings-group">
+                    <span class="settings-label" data-i18n="settingsGroupView">视角与风格</span>
+                    <div class="map-view-controls" role="group" aria-label="三维视角控制">
+                      <button type="button" class="is-active" data-view-mode="3d" data-i18n="btn3d" data-i18n-title="btn3dTitle" title="三维立体起伏地形">3D 沙盘</button>
+                      <button type="button" data-view-mode="2d" data-i18n="btn2d" data-i18n-title="btn2dTitle" title="二维平面地图">2D 平面</button>
+                      <button type="button" data-cam-action="low-fly" data-i18n="btnLowFly" data-i18n-title="btnLowFlyTitle" title="低空临境观察山势">低空</button>
+                      <button type="button" class="is-active" data-cam-action="auto-cam" aria-pressed="true" data-i18n="btnAutoCam" data-i18n-title="btnAutoCamTitle" title="切换阶段时电影运镜自动聚焦战区">运镜</button>
+                      <button type="button" class="is-active" data-cam-action="toggle-style" aria-pressed="true" data-i18n-title="btnStyleTitle" title="切换策略游戏地图风 / 写实纪录片风">游戏风</button>
+                      <button type="button" data-cam-action="zoom-out" aria-label="缩小视角" data-i18n-title="btnZoomOut" title="缩小">−</button>
+                      <button type="button" data-cam-action="zoom-in" aria-label="放大视角" data-i18n-title="btnZoomIn" title="放大">＋</button>
+                      <button type="button" data-cam-action="reset" aria-label="重置视角" data-i18n-title="btnReset" title="重置视角">↺</button>
+                    </div>
+                  </div>
+                  <div class="settings-group">
+                    <span class="settings-label" data-i18n="settingsGroupForce">阵营筛选</span>
+                    <div class="map-filters" role="group" aria-label="阵营筛选"></div>
+                  </div>
+                  <div class="settings-group">
+                    <span class="settings-label" data-i18n="settingsGroupLayer">图层开关</span>
+                    <div class="map-layer-toggles" role="group" aria-label="图层开关"></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="map-layer-toggles" role="group" aria-label="图层开关"></div>
           </div>
+          <div class="share-toast" id="share-toast" hidden role="status"></div>
 
           <div class="hud-env-badge" id="hud-env-badge" aria-hidden="true"></div>
           <div class="hud-war-bar" id="hud-war-bar" aria-live="polite">
@@ -184,6 +277,7 @@
           <div class="sandtable-viewport" id="sandtable-viewport">
             <canvas class="terrain-3d-canvas" id="terrain-3d-canvas" aria-hidden="true"></canvas>
             <div class="terrain-3d-overlay" id="terrain-3d-overlay">
+              <svg class="gl-compare-svg" id="gl-compare-svg" aria-hidden="true"></svg>
               <div class="gl-layer gl-landmarks" id="gl-landmarks"></div>
               <div class="gl-layer gl-movers" id="gl-movers" aria-hidden="true"></div>
               <div class="gl-layer gl-markers" id="gl-markers"></div>
@@ -227,6 +321,8 @@
                 <g id="map-terrain" class="map-terrain"></g>
                 <g id="map-enemy-routes" class="enemy-routes" aria-hidden="true"></g>
                 <g id="map-routes" class="routes" aria-hidden="true"></g>
+                <g id="map-route-turn-layer" class="route-turn-layer" aria-hidden="true"></g>
+                <g id="map-compare-layer" class="compare-layer" aria-hidden="true"></g>
                 <g id="map-locations" class="locations"></g>
                 <g id="map-markers" class="map-markers" aria-label="关键战事标记"></g>
                 <g id="formation-layer" class="formation-layer" aria-label="当前阶段双方部队"></g>
@@ -398,6 +494,6 @@
       <p data-i18n="footerDisclaimer">地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=15"></script>
+    <script type="module" src="./app.js?v=17"></script>
   </body>
 </html>

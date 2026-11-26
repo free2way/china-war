@@ -2,7 +2,7 @@
 // 支持真实起伏地形与实时软阴影、实体 3D 森林与城池关隘、分时代不同军装 3D 立体小人方阵/骑兵/坦克、
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
-import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=25";
+import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=30";
 import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=25";
 import { VoiceNarrator } from "./voiceNarrator.js?v=3";
 import { getPhaseTurnScript } from "../data/turnScripts.js?v=2";
@@ -849,8 +849,8 @@ export class MapRenderer {
     this.phaseRenderedIndex = -1;
     this.forceFilter = "all";
     this.activeComparePairs = [];
-    // 四渡赤水默认启用定制「三国沙盘」风格，其余战役保持原有策略游戏风互不干扰
-    this.applyMapStyle(battle.id === "chishui-1935" ? "sanguo" : "game");
+    // 保持全应用统一的沙盘界面、兵牌与地标样式（四渡赤水仅在底层 3D 山川水系采用定制喀斯特林山地貌）
+    this.applyMapStyle("game");
     if (this.glCompareSvgEl) {
       this.glCompareSvgEl.innerHTML = "";
       this._glCompareEmpty = true;

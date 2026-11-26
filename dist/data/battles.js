@@ -31,8 +31,8 @@ export const battleRegistry = [
       summary: "Four rapid crossings of the Chishui River broke a 400,000-troop encirclement through mobile warfare.",
       seal: "CS"
     },
-    loader: () => import("./chishui-1935.js?v=3"),
-    enLoader: () => import("./en/chishui-1935.js?v=1")
+    loader: () => import("./chishui-1935.js?v=4"),
+    enLoader: () => import("./en/chishui-1935.js?v=3")
   },
   {
     id: "guandu-200",
@@ -60,8 +60,8 @@ export const battleRegistry = [
       summary: "After a 100-day standoff, Cao Cao's night cavalry raid burned Wuchao's grain depot, shattering Yuan Shao's northern army.",
       seal: "GD"
     },
-    loader: () => import("./guandu-200.js?v=4"),
-    enLoader: () => import("./en/guandu-200.js?v=1")
+    loader: () => import("./guandu-200.js?v=5"),
+    enLoader: () => import("./en/guandu-200.js?v=2")
   },
   {
     id: "changjin-1950",
@@ -89,8 +89,8 @@ export const battleRegistry = [
       summary: "In -40°C blizzards, PVA divisions encircled US X Corps around the frozen reservoir, destroying Task Force Faith and forcing evacuation from Hungnam.",
       seal: "CJ"
     },
-    loader: () => import("./changjin-1950.js?v=4"),
-    enLoader: () => import("./en/changjin-1950.js?v=1")
+    loader: () => import("./changjin-1950.js?v=5"),
+    enLoader: () => import("./en/changjin-1950.js?v=2")
   },
   {
     id: "normandy-1944",
@@ -118,8 +118,8 @@ export const battleRegistry = [
       summary: "History's largest amphibious invasion breached the Atlantic Wall across five beaches to open the Western Front.",
       seal: "DD"
     },
-    loader: () => import("./normandy-1944.js?v=3"),
-    enLoader: () => import("./en/normandy-1944.js?v=1")
+    loader: () => import("./normandy-1944.js?v=5"),
+    enLoader: () => import("./en/normandy-1944.js?v=2")
   },
   {
     id: "market-garden-1944",
@@ -147,8 +147,8 @@ export const battleRegistry = [
       summary: "The largest daylight airborne drop aimed to seize Dutch river bridges along 'Hell's Highway', stalling at Arnhem—a bridge too far.",
       seal: "MG"
     },
-    loader: () => import("./market-garden-1944.js?v=3"),
-    enLoader: () => import("./en/market-garden-1944.js?v=1")
+    loader: () => import("./market-garden-1944.js?v=4"),
+    enLoader: () => import("./en/market-garden-1944.js?v=2")
   },
   {
     id: "stalingrad-1942",

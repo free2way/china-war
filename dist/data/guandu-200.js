@@ -361,17 +361,17 @@ export default {
   chronicle: {
     eyebrow: "建安四年秋 — 建安五年冬",
     title: "一年之间，<br />北方霸权易手。",
-    deck: "点击节点可将上方沙盘切换到对应阶段。月份依《三国志》《资治通鉴》概括，部分细节诸说不一。",
+    deck: "点击事件可回到相应一幕。月份依《三国志》《资治通鉴》概括，部分细节诸说不一。",
     events: [
-      { date: "199 秋", stage: "战云初起", title: "袁绍简精卒十万，谋攻许都", desc: "沮授、田丰主张持久，审配、郭图主张速战，袁绍从后者。", tag: "战略集结", phaseIndex: 0 },
-      { date: "200 正月", stage: "东征刘备", title: "曹操亲征徐州，破刘备", desc: "诸将恐袁绍乘虚，曹操判断其“性迟而多疑”，果然袁绍未出兵；关羽被擒归曹。", tag: "扫除侧翼", phaseIndex: 0 },
-      { date: "200 四月", stage: "白马之战", title: "声东击西，关羽斩颜良", desc: "佯渡延津分袁军之势，轻兵袭白马，解刘延之围。", tag: "初挫锋芒", phaseIndex: 0 },
-      { date: "200 四月", stage: "延津之战", title: "委弃辎重，斩文丑", desc: "以辎重诱袁骑争抢，乘乱纵击，斩文丑；曹军还军官渡。", tag: "诱敌歼敌", phaseIndex: 0 },
-      { date: "200 八月", stage: "官渡相持", title: "土山高橹对霹雳车", desc: "袁军连营俯射，曹军发石车击破其楼橹。", tag: "要塞攻防", phaseIndex: 1 },
-      { date: "200 九月", stage: "坚守待变", title: "荀彧复书，徐晃焚粮", desc: "曹操议退，荀彧劝以“扼其喉而不得进”；徐晃、史涣烧袁军运车于故市。", tag: "战略定力", phaseIndex: 1 },
-      { date: "200 十月", stage: "许攸来奔", title: "献乌巢屯粮之情", desc: "曹操跣出迎之：“卿来，吾事济矣！”", tag: "关键情报", phaseIndex: 2 },
-      { date: "200 十月", stage: "夜袭乌巢", title: "五千步骑焚尽袁粮", desc: "袁旗衔枚，夜出间道，斩淳于琼，尽燔其粮。", tag: "一击致命", phaseIndex: 2 },
-      { date: "200 十月", stage: "阵前倒戈", title: "张郃、高览焚攻具降曹", desc: "攻营不下又遭谗言，二将降曹，袁军大溃。", tag: "军心瓦解", phaseIndex: 3 },
+      { date: "199 秋", stage: "战云初起", title: "袁绍简精卒十万，谋攻许都", desc: "沮授、田丰主张持久，审配、郭图主张速战，袁绍从后者。", tag: "战略集结", phaseIndex: 0, isBackground: true },
+      { date: "200 正月", stage: "东征刘备", title: "曹操亲征徐州，破刘备", desc: "诸将恐袁绍乘虚，曹操判断其“性迟而多疑”，果然袁绍未出兵；关羽被擒归曹。", tag: "扫除侧翼", phaseIndex: 0, eventId: "guandu-1-1" },
+      { date: "200 四月", stage: "白马之战", title: "声东击西，关羽斩颜良", desc: "佯渡延津分袁军之势，轻兵袭白马，解刘延之围。", tag: "初挫锋芒", phaseIndex: 0, eventId: "guandu-1-3" },
+      { date: "200 四月", stage: "延津之战", title: "委弃辎重，斩文丑", desc: "以辎重诱袁骑争抢，乘乱纵击，斩文丑；曹军还军官渡。", tag: "诱敌歼敌", phaseIndex: 0, eventId: "guandu-1-4" },
+      { date: "200 八月", stage: "官渡相持", title: "土山高橹对霹雳车", desc: "袁军连营俯射，曹军发石车击破其楼橹。", tag: "要塞攻防", phaseIndex: 1, eventId: "guandu-2-2" },
+      { date: "200 九月", stage: "坚守待变", title: "荀彧复书，徐晃焚粮", desc: "曹操议退，荀彧劝以“扼其喉而不得进”；徐晃、史涣烧袁军运车于故市。", tag: "战略定力", phaseIndex: 1, eventId: "guandu-2-4" },
+      { date: "200 十月", stage: "许攸来奔", title: "献乌巢屯粮之情", desc: "曹操跣出迎之：“卿来，吾事济矣！”", tag: "关键情报", phaseIndex: 2, eventId: "guandu-3-1" },
+      { date: "200 十月", stage: "夜袭乌巢", title: "五千步骑焚尽袁粮", desc: "袁旗衔枚，夜出间道，斩淳于琼，尽燔其粮。", tag: "一击致命", phaseIndex: 2, eventId: "guandu-3-4" },
+      { date: "200 十月", stage: "阵前倒戈", title: "张郃、高览焚攻具降曹", desc: "攻营不下又遭谗言，二将降曹，袁军大溃。", tag: "军心瓦解", phaseIndex: 3, eventId: "guandu-4-1" },
       { date: "201 → 207", stage: "战役之后", title: "仓亭再胜，平定河北", desc: "袁绍病卒，诸子相争；曹操逐步平定冀、青、幽、并，北征乌桓，统一北方。", tag: "大势已定", phaseIndex: 3, isOutcome: true }
     ]
   },

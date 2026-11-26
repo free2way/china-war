@@ -5,6 +5,8 @@ export class VoiceNarrator {
   constructor() {
     this.enabled = false;
     this.speaking = false;
+    this.paused = false;
+    this.activeClipKey = null;
     this.playToken = 0;
     this.audio = typeof Audio !== "undefined" ? new Audio() : null;
     this.preloadAudio = typeof Audio !== "undefined" ? new Audio() : null;
@@ -55,6 +57,8 @@ export class VoiceNarrator {
   stop() {
     this.playToken++;
     this.speaking = false;
+    this.paused = false;
+    this.activeClipKey = null;
     if (this.audio) {
       try {
         this.audio.onplaying = null;
@@ -66,22 +70,34 @@ export class VoiceNarrator {
     }
   }
 
-  playClip({ battleId, phaseId, turnIndex, lang = "zh", nextTurnIndex = null, onStart, onEnd } = {}) {
-    if (!this.enabled || !this.audio || !battleId || !phaseId || turnIndex == null) {
-      onEnd?.();
-      return false;
-    }
+  pause() {
+    if (!this.audio || !this.activeClipKey) return false;
+    try {
+      if (!this.audio.paused && !this.audio.ended) {
+        this.audio.pause();
+        this.speaking = false;
+        this.paused = true;
+        return true;
+      }
+    } catch (_) {}
+    return this.paused;
+  }
 
-    this.stop();
+  canResume(battleId, phaseId, turnIndex, lang = "zh") {
+    const safeLang = lang === "en" ? "en" : "zh";
+    return Boolean(
+      this.enabled &&
+        this.audio &&
+        this.paused &&
+        !this.audio.ended &&
+        this.activeClipKey === `${safeLang}:${battleId}:${phaseId}:${turnIndex}`
+    );
+  }
+
+  resume({ onStart, onEnd } = {}) {
+    if (!this.enabled || !this.audio || !this.paused || !this.activeClipKey) return false;
     const myToken = this.playToken;
-    const url = this.buildClipUrl(battleId, phaseId, turnIndex, lang);
-
-    if (nextTurnIndex !== null && nextTurnIndex !== undefined) {
-      this.preload(battleId, phaseId, nextTurnIndex, lang);
-    }
-
-    this.audio.src = url;
-    this.audio.volume = 1.0;
+    this.paused = false;
 
     this.audio.onplaying = () => {
       if (myToken !== this.playToken) return;
@@ -91,11 +107,15 @@ export class VoiceNarrator {
     this.audio.onended = () => {
       if (myToken !== this.playToken) return;
       this.speaking = false;
+      this.paused = false;
+      this.activeClipKey = null;
       onEnd?.();
     };
     this.audio.onerror = () => {
       if (myToken !== this.playToken) return;
       this.speaking = false;
+      this.paused = false;
+      this.activeClipKey = null;
       onEnd?.();
     };
 
@@ -105,12 +125,84 @@ export class VoiceNarrator {
         p.catch(() => {
           if (myToken !== this.playToken) return;
           this.speaking = false;
+          this.paused = false;
+          this.activeClipKey = null;
           onEnd?.();
         });
       }
       return true;
     } catch (_) {
       this.speaking = false;
+      this.paused = false;
+      this.activeClipKey = null;
+      onEnd?.();
+      return false;
+    }
+  }
+
+  getProgress() {
+    if (!this.enabled || !this.audio || !this.activeClipKey) return null;
+    const dur = this.audio.duration;
+    if (!Number.isFinite(dur) || dur <= 0) return null;
+    return Math.max(0, Math.min(1, this.audio.currentTime / dur));
+  }
+
+  playClip({ battleId, phaseId, turnIndex, lang = "zh", nextTurnIndex = null, onStart, onEnd } = {}) {
+    if (!this.enabled || !this.audio || !battleId || !phaseId || turnIndex == null) {
+      onEnd?.();
+      return false;
+    }
+
+    this.stop();
+    const myToken = this.playToken;
+    const safeLang = lang === "en" ? "en" : "zh";
+    const url = this.buildClipUrl(battleId, phaseId, turnIndex, safeLang);
+    this.activeClipKey = `${safeLang}:${battleId}:${phaseId}:${turnIndex}`;
+
+    if (nextTurnIndex !== null && nextTurnIndex !== undefined) {
+      this.preload(battleId, phaseId, nextTurnIndex, safeLang);
+    }
+
+    this.audio.src = url;
+    this.audio.volume = 1.0;
+
+    this.audio.onplaying = () => {
+      if (myToken !== this.playToken) return;
+      this.speaking = true;
+      this.paused = false;
+      onStart?.();
+    };
+    this.audio.onended = () => {
+      if (myToken !== this.playToken) return;
+      this.speaking = false;
+      this.paused = false;
+      this.activeClipKey = null;
+      onEnd?.();
+    };
+    this.audio.onerror = () => {
+      if (myToken !== this.playToken) return;
+      this.speaking = false;
+      this.paused = false;
+      this.activeClipKey = null;
+      onEnd?.();
+    };
+
+    try {
+      const p = this.audio.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(() => {
+          if (myToken !== this.playToken) return;
+          this.speaking = false;
+          this.paused = false;
+          this.activeClipKey = null;
+          onEnd?.();
+        });
+      }
+      return true;
+    } catch (_) {
+      this.speaking = false;
+      this.paused = false;
+      this.activeClipKey = null;
       onEnd?.();
       return false;
     }

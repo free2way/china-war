@@ -279,7 +279,7 @@ export default {
   chronicle: {
     eyebrow: "AUTUMN 199 — WINTER 200 AD",
     title: "In a single year,<br />Northern China changed hands.",
-    deck: "Click any event to jump the 3D sandtable to that phase. Dates follow Records of the Three Kingdoms and Zizhi Tongjian.",
+    deck: "Click any event to return directly to that scene. Dates follow Records of the Three Kingdoms and Zizhi Tongjian.",
     events: [
       { date: "199 Aut", stage: "Gathering Storm", title: "Yuan Shao musters 100,000 to march on Xuchang", desc: "Ju Shou and Tian Feng urged attrition; Yuan sided with Guo Tu's push for quick battle.", tag: "Mobilization", phaseIndex: 0 },
       { date: "200 Jan", stage: "Eastern Strike", title: "Cao Cao marches east and defeats Liu Bei", desc: "Predicting Yuan Shao's hesitation, Cao cleared his eastern flank and captured Guan Yu.", tag: "Flank Cleared", phaseIndex: 0 },

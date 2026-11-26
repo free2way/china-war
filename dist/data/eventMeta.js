@@ -1,6 +1,8 @@
 // 战史沙盘 · 稳定事件 ID、导览剧本镜头、前后对照位移与事件级史料出处
 // 与 turnScripts.js 通过 (battleId, phaseId, turnIndex) 一一对应，确保时间线、地图、字幕、语音与分享链接指向同一幕。
 
+import { getPhaseTurnScript } from "./turnScripts.js?v=1";
+
 const BATTLE_PREFIX = {
   "chishui-1935": "chishui",
   "guandu-200": "guandu",
@@ -17,9 +19,10 @@ export const GUIDED_TOURS = {
     startEventId: "chishui-3-1",
     endEventId: "chishui-4-4",
     phaseRange: [2, 3],
+    sceneDurations: [8, 8, 11, 10, 9, 12, 8, 9],
     durationLabel: { zh: "约 75 秒导览", en: "~75s Guided Tour" },
     title: { zh: "三渡 → 四渡赤水 · 调敌与穿隙", en: "3rd → 4th Chishui Crossing · Lure & Breakout" },
-    cta: { zh: "观看三渡到四渡（90秒导览）→", en: "Watch 3rd → 4th Crossing (90s Tour) →" },
+    cta: { zh: "观看三渡到四渡 →", en: "Watch 3rd → 4th Crossing →" },
     deck: {
       zh: "同一视角看清：红军如何公开西渡茅台把数十万大军调往古蔺，再连夜折返东渡跳出合围。",
       en: "Watch in a locked frame how the Maotai feint pulled 400,000 KMT troops west—opening the seam for a secret night reversal east."
@@ -31,7 +34,7 @@ export const GUIDED_TOURS = {
     startEventId: "normandy-1-1",
     endEventId: "normandy-4-4",
     phaseRange: [0, 3],
-    durationLabel: { zh: "多登陆点跨战役验证", en: "Multi-Beach Campaign Tour" },
+    durationLabel: { zh: "五滩登陆导览", en: "Multi-Beach Campaign Tour" },
     title: { zh: "诺曼底登陆 · 五滩抢滩到突破", en: "Normandy · Five Beaches to Breakout" },
     cta: { zh: "观看诺曼底全线突破 →", en: "Watch Normandy Breakout →" },
     deck: {
@@ -41,10 +44,11 @@ export const GUIDED_TOURS = {
   }
 };
 
-// 统一锁定对比镜头：三渡茅台西渡 -> 敌军西移古蔺 -> 四渡秘密折返东渡（同比例、同视角前后对照！）
-const CHISHUI_COMPARE_CAM = { pitch: 38, yaw: -8, zoom: 1.08, panX: 52, panY: 22 };
+// 统一锁定对比镜头：三渡茅台西渡 -> 敌军西移古蔺 -> 四渡秘密折返东渡（同比例、同视角前后对照，完整露出川滇中央军与东渡路线）
+const CHISHUI_COMPARE_CAM = { pitch: 39, yaw: -7, zoom: 0.96, panX: 78, panY: -8 };
 // 诺曼底海岸线五滩同视角对照镜头
 const NORMANDY_COAST_CAM = { pitch: 36, yaw: -6, zoom: 1.06, panX: -8, panY: 16 };
+const GUIZHOU_HISTORY = "https://www.ccphistory.org.cn/shds/shhm/content/13b1cdbd-0432-4ed9-8f15-7082ed2ea754.html";
 
 // 事件级扩展元数据：镜头编排、前后位置对照、史料依据与地图精度标注
 // key 格式：`${battleId}:${phaseId}:${turnIndex}`
@@ -54,14 +58,14 @@ export const EVENT_META = {
     camera: { pitch: 38, yaw: -8, zoom: 1.04, panX: -20, panY: -12 },
     precision: { zh: "史实地点：遵义、苟坝 · 路线为战役示意 · 3D山势为程序模拟", en: "Verified places: Zunyi, Gouba · Schematic routes · Procedural 3D terrain" },
     sources: [
-      { title: { zh: "中共中央文献研究室《毛泽东年谱（1893—1949）》", en: "Chronicle of Mao Zedong (1893–1949)" }, note: { zh: "1935年3月10—12日苟坝会议决定放弃攻打打鼓新场，成立三人军事指挥小组。", en: "Mar 10–12, 1935 Gouba Conference canceled the Dagu Xinchang assault and formed the 3-man military group." }, url: "https://www.12371.cn/2021/10/21/ARTI1634810104798403.shtml" }
+      { title: { zh: "贵州省委党史研究室《中央红军长征在贵州》", en: "The Central Red Army’s Long March in Guizhou" }, note: { zh: "3月5日红一、三军团奉命寻歼周浑元部。3月中旬，苟坝一带调组军事指挥机构。", en: "On March 5 the 1st and 3rd Army Groups sought Zhou Hunyuan's forces. In mid-March, military command was reorganized around Gouba." }, url: GUIZHOU_HISTORY }
     ]
   },
   "chishui-1935:third-crossing:1": {
     camera: CHISHUI_COMPARE_CAM,
     precision: { zh: "史实地点：鲁班场、茅台 · 路线为战役示意", en: "Verified places: Lubanchang, Maotai · Schematic routes" },
     sources: [
-      { title: { zh: "军事科学院《中国工农红军长征史》", en: "History of the Long March (AMS)" }, note: { zh: "3月15日鲁班场战斗未能速决，中革军委果断下令撤出并转向茅台渡口。", en: "After inconclusive combat at Lubanchang on Mar 15, the CMC broke contact and pivoted to Maotai." }, url: "https://www.81.mil.cn/yljnt_208627/lsda_208656/16451606.html" }
+      { title: { zh: "贵州省委党史研究室《中央红军长征在贵州》", en: "The Central Red Army’s Long March in Guizhou" }, note: { zh: "3月15日红军进攻鲁班场，国民党军援兵赶来时转向茅台。", en: "On March 15 the Red Army attacked at Lubanchang and shifted toward Maotai as reinforcements approached." }, url: GUIZHOU_HISTORY }
     ]
   },
   "chishui-1935:third-crossing:2": {
@@ -74,11 +78,16 @@ export const EVENT_META = {
   },
   "chishui-1935:third-crossing:3": {
     camera: CHISHUI_COMPARE_CAM,
-    compareUnits: ["central-zhou", "sichuan", "yunnan"],
+    compareToNextPhase: true,
+    compareUnits: [
+      "central-zhou",
+      "yunnan",
+      { id: "sichuan-shift", from: [250, 140], to: [238, 228], side: "blue" }
+    ],
     compareLabel: { zh: "同视角对照 · ② 国民党军重心西移古蔺（东南露隙）", en: "Locked Frame · 2. KMT Columns Pulled West (SE Seam Opens)" },
     precision: { zh: "史实动向：川军/中央军/滇军西调古蔺 · 箭头为态势示意", en: "Verified shift: Sichuan, Central & Yunnan columns converged on Gulin · Schematic arrows" },
     sources: [
-      { title: { zh: "中国共产党新闻网 · 四渡赤水决策复盘", en: "CPC News · Four Crossings Review" }, note: { zh: "蒋介石急调川、滇、中央军向古蔺合围，赤水河东岸至乌江北岸防线随即空虚。", en: "Chiang rushed provincial and Central columns toward Gulin, thinning lines east of the Chishui River." }, url: "https://cpc.people.com.cn/n1/2022/0825/c443712-32510938.html" }
+      { title: { zh: "贵州省委党史研究室《中央红军长征在贵州》", en: "The Central Red Army’s Long March in Guizhou" }, note: { zh: "蒋介石判断红军将北渡长江，调川滇黔军和中央军向长江沿线集结。", en: "Expecting a Yangtze crossing, Chiang ordered provincial and Central Army columns to concentrate along the river." }, url: GUIZHOU_HISTORY }
     ]
   },
   "chishui-1935:fourth-crossing:0": {
@@ -87,16 +96,16 @@ export const EVENT_META = {
     compareLabel: { zh: "同视角对照 · ③ 仅留一团西佯，吸住敌军主力", en: "Locked Frame · 3. Single Decoy Regt Pins KMT West" },
     precision: { zh: "史实部署：红1军团1个团古蔺佯动 · 虚线为对比前一步敌军西移轨迹", en: "Verified tactic: 1st AG decoy regiment at Gulin · Dashed ghosts show KMT westward shift" },
     sources: [
-      { title: { zh: "军事科学院《中国工农红军长征史》", en: "History of the Long March (AMS)" }, note: { zh: "3月20日红军留红1军团1个团继续向古蔺佯动，主力趁夜秘密掉头东进。", en: "On Mar 20, one regiment continued feinting toward Gulin while the main body turned east under cover of night." }, url: "https://www.81.mil.cn/yljnt_208627/lsda_208656/16451606.html" }
+      { title: { zh: "中国共产党新闻网《第九章　四渡赤水（下）》", en: "CPC News · Four Crossings of the Chishui, Part II" }, note: { zh: "3月20日的行动部署令红一军团以一个团向古蔺佯动，主力折转东进。", en: "The March 20 order directed one regiment to feint toward Gulin while the main force turned east." }, url: "https://dangshi.people.com.cn/n1/2016/0814/c406330-28634785.html" }
     ]
   },
   "chishui-1935:fourth-crossing:1": {
     camera: CHISHUI_COMPARE_CAM,
-    compareUnits: ["red-1", "red-3", "red-5", "central-zhou"],
+    compareUnits: ["central-zhou", "yunnan"],
     compareLabel: { zh: "同视角对照 · ④ 主力神速折返，二郎滩/太平渡秘密东渡！", en: "Locked Frame · 4. Main Force Reverses East Across Erlangtan!" },
-    precision: { zh: "史实渡口：二郎滩、太平渡（3月21—22日） · 清晰可见红军与西调敌军相向穿插", en: "Verified fords: Erlangtan & Taiping (Mar 21–22) · Notice Red reversal crossing opposite KMT shift" },
+    precision: { zh: "史实渡口：二郎滩、太平渡（3月21—22日） · 实线路线为态势示意", en: "Historical fords: Erlangtan & Taiping (Mar 21–22) · Routes are schematic" },
     sources: [
-      { title: { zh: "共产党员网 · 四渡赤水经典战例", en: "12371 Archive · Four Crossings Study" }, note: { zh: "3月21—22日红军主力从二郎滩、太平渡、九溪口东渡赤水，与西进之敌擦肩穿插。", en: "On Mar 21–22, the main force recrossed east at Erlangtan and Taiping Ford right past converging enemy columns." }, url: "https://www.12371.cn/2021/10/21/ARTI1634810104798403.shtml" }
+      { title: { zh: "贵州省委党史研究室《中央红军长征在贵州》", en: "The Central Red Army’s Long March in Guizhou" }, note: { zh: "3月21—22日，红军主力由二郎滩、淋滩、太平渡等渡口东渡赤水。", en: "On March 21–22 the main force crossed east at Erlangtan, Lintan, Taiping and other fords." }, url: GUIZHOU_HISTORY }
     ]
   },
   "chishui-1935:fourth-crossing:2": {
@@ -111,7 +120,7 @@ export const EVENT_META = {
     camera: { pitch: 38, yaw: -4, zoom: 1.02, panX: -12, panY: -78 },
     precision: { zh: "史实节点：3月31日南渡乌江、佯攻贵阳 · 3D地形程序模拟", en: "Verified event: Wu River crossing (Mar 31) & Guiyang feint · Procedural 3D terrain" },
     sources: [
-      { title: { zh: "中共中央党史和文献研究院公开资料", en: "Institute of Party History & Literature Archive" }, note: { zh: "3月31日主力南渡乌江直逼贵阳，彻底跳出约40万国民党军合围圈。", en: "Crossing south over the Wu River on Mar 31 broke free of the ~400,000-troop encirclement." }, url: "https://cpc.people.com.cn/n1/2022/0825/c443712-32510938.html" }
+      { title: { zh: "贵州省委党史研究室《中央红军长征在贵州》", en: "The Central Red Army’s Long March in Guizhou" }, note: { zh: "3月31日军委下令渡乌江。红军主力渡江后向贵阳方向挺进。", en: "On March 31 the CMC ordered the Wu River crossing. The main force then moved toward Guiyang." }, url: GUIZHOU_HISTORY }
     ]
   },
 
@@ -219,6 +228,11 @@ export function getDefaultPrecision(lang = "zh") {
     : "史实关键地点 · 示意性机动路线 · 程序模拟三维地形";
 }
 
+export function getPhaseSceneCount(battle, phaseIndex) {
+  const phase = battle.phases[phaseIndex];
+  return getPhaseTurnScript(battle.id, phase.id)?.length || phase.detail?.length || 1;
+}
+
 /**
  * 将稳定事件 ID（如 "chishui-3-2"）解析为当前战役对应的 { phaseIndex, turnIndex }
  */
@@ -231,5 +245,6 @@ export function resolveEventId(battle, eventId) {
   const phaseIndex = Number(m[1]) - 1;
   const turnIndex = Number(m[2]) - 1;
   if (phaseIndex < 0 || phaseIndex >= (battle.phases || []).length) return null;
-  return { phaseIndex, turnIndex: Math.max(0, turnIndex) };
+  if (turnIndex < 0 || turnIndex >= getPhaseSceneCount(battle, phaseIndex)) return null;
+  return { phaseIndex, turnIndex };
 }

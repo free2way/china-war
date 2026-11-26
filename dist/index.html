@@ -6,7 +6,7 @@
     <meta name="description" content="战史沙盘：以三维立体交互方式推演古今中外著名战役——四渡赤水、官渡之战、长津湖战役、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
     <title>战史沙盘｜世界历史著名战役三维交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=17" />
+    <link rel="stylesheet" href="./styles.css?v=20" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
@@ -80,10 +80,10 @@
                 <polygon points="231,187 220,183 227,175" fill="#ffb169" />
                 <circle cx="144" cy="116" r="4.5" fill="#fff" stroke="#e2513f" stroke-width="2" />
                 <circle cx="154" cy="100" r="4" fill="#ffd166" stroke="#141815" stroke-width="1.5" />
-                <text x="54" y="54" fill="#9ed4fa" font-size="10" font-family="sans-serif">古蔺 · 敌重兵西移</text>
-                <text x="166" y="102" fill="#ffe29a" font-size="10" font-family="sans-serif">二郎滩 · 秘密东渡</text>
-                <text x="152" y="132" fill="#f2ece0" font-size="9.5" opacity=".8" font-family="sans-serif">茅台</text>
-                <text x="236" y="188" fill="#ffb478" font-size="10" font-family="sans-serif">南渡乌江</text>
+                <text x="42" y="54" fill="#9ed4fa" font-size="10" font-family="sans-serif" data-i18n="homeSvgGulin">古蔺 · 敌重兵西移</text>
+                <text x="164" y="102" fill="#ffe29a" font-size="10" font-family="sans-serif" data-i18n="homeSvgErlang">二郎滩 · 秘密东渡</text>
+                <text x="152" y="132" fill="#f2ece0" font-size="9.5" opacity=".8" font-family="sans-serif" data-i18n="homeSvgMaotai">茅台</text>
+                <text x="234" y="188" fill="#ffb478" font-size="10" font-family="sans-serif" data-i18n="homeSvgWujiang">南渡乌江</text>
               </svg>
             </div>
             <div class="flagship-copy">
@@ -163,7 +163,7 @@
             <div class="stage-context-strip" id="stage-context-strip">
               <div class="tour-pill" id="tour-pill" hidden>
                 <span class="tour-pill-dot" aria-hidden="true"></span>
-                <span id="tour-pill-text">精选 90 秒导览 · 三渡 → 四渡</span>
+                <span id="tour-pill-text"></span>
                 <button type="button" id="tour-exit-btn" data-i18n="tourExitBtn">退出导览</button>
               </div>
               <div class="compare-pill" id="compare-pill" hidden></div>
@@ -256,9 +256,13 @@
                   <path class="wave-2" d="M19 6.2a8 8 0 0 1 0 11.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
                 </svg>
               </button>
-              <div class="turn-dots" id="turn-dots" role="tablist"></div>
               <button type="button" class="turn-mode-btn" id="turn-mode-btn" title="切换：分步回合推演 / 本阶段路线全览">全览</button>
               <span class="turn-progress-track" aria-hidden="true"><i id="turn-progress-fill"></i></span>
+            </div>
+            <div class="scene-timeline">
+              <label for="scene-seek" data-i18n="sceneSeek">事件时间轴</label>
+              <input type="range" id="scene-seek" min="0" max="0" step="1" value="0" />
+              <span id="scene-position" aria-hidden="true"></span>
             </div>
           </div>
           <div class="hud-compass" aria-hidden="true" title="北向指北针">
@@ -494,6 +498,6 @@
       <p data-i18n="footerDisclaimer">地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=17"></script>
+    <script type="module" src="./app.js?v=21"></script>
   </body>
 </html>

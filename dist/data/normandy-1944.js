@@ -337,15 +337,15 @@ export default {
   chronicle: {
     eyebrow: "1944.06.05 — 08.25",
     title: "50天鏖战，<br />撬动整个西欧战局。",
-    deck: "点击节点可将上方沙盘切换到对应阶段。日期依据盟军与德军官方战史概括。",
+    deck: "点击事件可回到相应一幕。日期依据盟军与德军官方战史概括。",
     events: [
-      { date: "06.05 夜", stage: "出征前夜", title: "艾森豪威尔下达“OK, Let's Go”命令", desc: "抓住6月6日短暂气象窗口，近七千艘舰艇与三个空降师启程。", tag: "战略决断", phaseIndex: 0 },
-      { date: "06.06 凌晨", stage: "两翼空降", title: "奇袭飞马桥与解放圣梅尔埃格利斯", desc: "英第6、美第82与101空降师在诺曼底东西两翼打响第一枪。", tag: "空降破晓", phaseIndex: 0 },
-      { date: "06.06 拂晓", stage: "D日抢滩", title: "五滩同步强登，浴血奥马哈", desc: "约15.6万盟军官兵强登大西洋壁垒，当日即在全部五处海滩站稳脚跟。", tag: "五滩强登", phaseIndex: 1 },
-      { date: "06.12", stage: "滩头连通", title: "美第101空降师血战攻克卡朗唐", desc: "犹他与奥马哈滩头连成一体，盟军形成80公里宽稳固登陆场。", tag: "连成一片", phaseIndex: 2 },
-      { date: "06.26", stage: "夺取深水港", title: "美第7军攻克瑟堡", desc: "切断科唐坦半岛，解除西翼威胁并俘获大批德军。", tag: "攻克瑟堡", phaseIndex: 2 },
-      { date: "07.09", stage: "东线攻坚", title: "英加部队攻克卡昂主城", desc: "持续猛攻牢牢吸住德军绝大多数装甲师，为西线突破铺平道路。", tag: "铁砧牵制", phaseIndex: 3 },
-      { date: "07.25", stage: "眼镜蛇行动", title: "圣洛以西饱和轰炸，美军大突破", desc: "撕裂德军西翼防线，巴顿美第3集团军经阿夫朗什涌入法国腹地。", tag: "战略突破", phaseIndex: 3 },
+      { date: "06.05 夜", stage: "出征前夜", title: "艾森豪威尔下达“OK, Let's Go”命令", desc: "抓住6月6日短暂气象窗口，近七千艘舰艇与三个空降师启程。", tag: "战略决断", phaseIndex: 0, eventId: "normandy-1-1" },
+      { date: "06.06 凌晨", stage: "两翼空降", title: "奇袭飞马桥与解放圣梅尔埃格利斯", desc: "英第6、美第82与101空降师在诺曼底东西两翼打响第一枪。", tag: "空降破晓", phaseIndex: 0, eventId: "normandy-1-2" },
+      { date: "06.06 拂晓", stage: "D日抢滩", title: "五滩同步强登，浴血奥马哈", desc: "约15.6万盟军官兵强登大西洋壁垒，当日即在全部五处海滩站稳脚跟。", tag: "五滩强登", phaseIndex: 1, eventId: "normandy-2-1" },
+      { date: "06.12", stage: "滩头连通", title: "美第101空降师血战攻克卡朗唐", desc: "犹他与奥马哈滩头连成一体，盟军形成80公里宽稳固登陆场。", tag: "连成一片", phaseIndex: 2, eventId: "normandy-3-2" },
+      { date: "06.26", stage: "夺取深水港", title: "美第7军攻克瑟堡", desc: "切断科唐坦半岛，解除西翼威胁并俘获大批德军。", tag: "攻克瑟堡", phaseIndex: 2, eventId: "normandy-3-4" },
+      { date: "07.09", stage: "东线攻坚", title: "英加部队攻克卡昂主城", desc: "持续猛攻牢牢吸住德军绝大多数装甲师，为西线突破铺平道路。", tag: "铁砧牵制", phaseIndex: 3, eventId: "normandy-4-1" },
+      { date: "07.25", stage: "眼镜蛇行动", title: "圣洛以西饱和轰炸，美军大突破", desc: "撕裂德军西翼防线，巴顿美第3集团军经阿夫朗什涌入法国腹地。", tag: "战略突破", phaseIndex: 3, eventId: "normandy-4-3" },
       { date: "08.21 → 08.25", stage: "战役之后", title: "法莱斯合围与解放巴黎", desc: "德军西线主力在法莱斯口袋遭重创，8月25日巴黎解放，盟军挺进德国边境。", tag: "解放西欧", phaseIndex: 3, isOutcome: true }
     ]
   },

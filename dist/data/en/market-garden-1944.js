@@ -274,7 +274,7 @@ export default {
   chronicle: {
     eyebrow: "SEP 17 – SEP 26, 1944",
     title: "Ten days of fire,<br />halted at the Rhine.",
-    deck: "Click any event to jump the 3D sandtable to its phase. Though the Rhine held, the Nijmegen salient freed much of southern Holland.",
+    deck: "Click any event to return directly to that scene. Though the Rhine held, the Nijmegen salient freed much of southern Holland.",
     events: [
       { date: "Sep 17 PM", stage: "Market Launches", title: "~20,000 Allied paratroopers drop in daylight", desc: "US 101st, 82nd, and UK 1st Airborne landed as XXX Corps drove north from Joe's Bridge.", tag: "Daylight Drop", phaseIndex: 0 },
       { date: "Sep 17 Night", stage: "Arnhem North", title: "Frost's 2nd Battalion seizes north bridge", desc: "~740 paratroopers took Arnhem's north ramp as Son bridge blew and Model deployed SS panzers.", tag: "Isolated Hold", phaseIndex: 0 },

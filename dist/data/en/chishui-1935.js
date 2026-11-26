@@ -138,10 +138,10 @@ export default {
         { label: "Crossing at Maotai", desc: "Openly crossed west to convince Chiang Kai-shek the Red Army was heading back to the Yangtze." }
       ],
       detail: [
-        ["From Mar 5", "Probing Zhou Hunyuan", "1st and 3rd Army Groups sought openings west of Zunyi against fortified blockhouses."],
-        ["Mar 10–12", "Gouba Conference", "Called off the attack on Dagu Xinchang and unified field command under Mao, Zhou, and Wang."],
-        ["Mar 15", "Lubanchang Fight", "Withdrew promptly when quick annihilation proved impossible, pivoting to the upper Chishui."],
-        ["Mar 16–17", "Maotai West Crossing", "Crossed visibly toward Gulin and Xuyong to pull KMT divisions westward."]
+        ["Mar 5–12", "After Zunyi: The Gouba Conference", "The Red Army probed west of Zunyi. At Gouba it called off the attack on Dagu Xinchang and later reorganized field command."],
+        ["Mar 15", "From Lubanchang to Maotai", "The Red Army broke off the fighting at Lubanchang and moved toward the upper Chishui."],
+        ["Mar 16–17", "Maotai West Crossing", "The Red Army advanced toward Gulin and Xuyong as if preparing to cross the Yangtze."],
+        ["After the third crossing", "KMT Columns Shift West", "KMT columns reinforced southern Sichuan and the approaches to the Yangtze."]
       ],
       formations: {
         "red-command": { label: "3-Man Command", sub: "Mao · Zhou · Wang" },
@@ -293,7 +293,7 @@ export default {
   chronicle: {
     eyebrow: "JAN 19 – MAR 22, 1935",
     title: "64 days,<br />four reversals of direction.",
-    deck: "Click any event to jump the 3D sandtable to that phase. Dates reflect campaign-level summaries.",
+    deck: "Click any event to return directly to that scene. Dates reflect campaign-level summaries.",
     events: [
       { date: "Jan 19", stage: "Opening", title: "Depart Zunyi toward the Sichuan border", desc: "Initial plan aimed to cross the Yangtze north into Sichuan to join the 4th Front Army.", tag: "Pivot", phaseIndex: 0 },
       { date: "Jan 28", stage: "Tucheng", title: "Enemy strength exceeds intel; break contact", desc: "Refusing a losing battle of attrition at Qinggangpo, command ordered an overnight withdrawal.", tag: "Decisive", phaseIndex: 0 },

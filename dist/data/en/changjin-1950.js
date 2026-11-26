@@ -266,10 +266,10 @@ export default {
   chronicle: {
     eyebrow: "NOV 27 – DEC 24, 1950",
     title: "28 days & nights,<br />forged in ice and fire.",
-    deck: "Click any event to switch the 3D sandtable to its phase.",
+    deck: "Click any event to return directly to that scene.",
     events: [
       { date: "Nov 27 Night", stage: "Opening Strike", title: "9th Army Group launches surprise snow attack", desc: "20th and 27th Armies struck simultaneously, isolating US troops at Yudam-ni, Sinhung-ni, and Hagaru-ri.", tag: "Envelopment", phaseIndex: 0 },
-      { date: "Nov 29", stage: "Xiaogaoling", title: "Yang Gensi's heroic stand above Hagaru-ri", desc: "After beating back 8 assaults, Yang Gensi sacrificed himself with a satchel charge to hold the hill.", tag: "Valor", phaseIndex: 0 },
+      { date: "Nov 29", stage: "Xiaogaoling", title: "Yang Gensi's heroic stand above Hagaru-ri", desc: "After beating back 8 assaults, Yang Gensi sacrificed himself with a satchel charge to hold the hill.", tag: "Valor", phaseIndex: 2 },
       { date: "Dec 1–2", stage: "Sinhung-ni", title: "US 31st RCT destroyed; colors captured", desc: "PVA 80th and 81st Divisions wiped out Task Force Faith east of the reservoir.", tag: "Victory", phaseIndex: 1 },
       { date: "Dec 1–4", stage: "Toktong Pass", title: "Blizzard blocking actions & 'Ice Sculpture' posts", desc: "Marines fought south from Yudam-ni while freezing PVA defenders held ambush ridges at -40°C.", tag: "Sub-Zero", phaseIndex: 2 },
       { date: "Dec 6", stage: "Hagaru-ri", title: "Marines destroy airstrip and break out south", desc: "After evacuating wounded by air, 1st Marine Division pushed down the highway toward Koto-ri.", tag: "Retreat", phaseIndex: 2 },

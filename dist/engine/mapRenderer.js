@@ -3,10 +3,10 @@
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
 import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=16";
-import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=5";
-import { VoiceNarrator } from "./voiceNarrator.js?v=2";
+import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=8";
+import { VoiceNarrator } from "./voiceNarrator.js?v=3";
 import { getPhaseTurnScript } from "../data/turnScripts.js?v=1";
-import { makeEventId, getEventMeta, getDefaultPrecision } from "../data/eventMeta.js?v=2";
+import { makeEventId, getEventMeta, getDefaultPrecision, getPhaseSceneCount } from "../data/eventMeta.js?v=4";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const PLATE_HEIGHT = 30;
@@ -344,6 +344,9 @@ export class MapRenderer {
     this.hudCompassNeedleEl = stageEl.querySelector("#hud-compass-needle");
     this.hudEnvBadgeEl = stageEl.querySelector("#hud-env-badge");
     this.turnProgressFillEl = stageEl.querySelector("#turn-progress-fill");
+    this.sceneSeekEl = stageEl.querySelector("#scene-seek");
+    this.scenePositionEl = stageEl.querySelector("#scene-position");
+    this.sceneStops = [];
     this.bannerEl = stageEl.querySelector("#cinematic-banner");
     this.voiceBtnEl = stageEl.querySelector("#turn-voice-btn");
     this.castEl = stageEl.querySelector("#live-commentary");
@@ -388,6 +391,8 @@ export class MapRenderer {
     this.continuousPlay = false;
     this.guidedTour = null;
     this.turnTimer = null;
+    this.turnDeadline = null;
+    this.turnRemaining = null;
     this.turnStartTime = performance.now();
     this.onTurnChange = null;
     this.onEventChange = null;
@@ -550,6 +555,13 @@ export class MapRenderer {
   }
 
   bindTurnControls() {
+    this.sceneSeekEl?.addEventListener("input", () => {
+      const scene = this.sceneStops[Number(this.sceneSeekEl.value)];
+      if (scene) this.goToScene(scene.phase, scene.turn, { narrate: false, scrubbing: true });
+    });
+    this.sceneSeekEl?.addEventListener("change", () => {
+      this.emitEventChange({ scrubbing: false });
+    });
     this.stageEl.querySelector("#turn-prev")?.addEventListener("click", () => {
       this.stepScene(-1);
     });
@@ -603,6 +615,7 @@ export class MapRenderer {
       this.castToggleEl.setAttribute("aria-expanded", String(!collapsed));
     });
     this.castSourceBtnEl?.addEventListener("click", () => {
+      if (!this.sourcesOpen && this.isUnifiedPlaying()) this.pauseUnified();
       this.sourcesOpen = !this.sourcesOpen;
       if (this.castSourcesEl) this.castSourcesEl.hidden = !this.sourcesOpen;
       this.castSourceBtnEl.classList.toggle("is-active", this.sourcesOpen);
@@ -611,6 +624,7 @@ export class MapRenderer {
 
     // 退出导览按钮
     this.tourExitBtnEl?.addEventListener("click", () => {
+      this.pauseUnified({ notify: false });
       this.setGuidedTour(null, { notify: true });
     });
 
@@ -644,7 +658,9 @@ export class MapRenderer {
 
     // 一键复制当前一幕深链分享 URL
     this.shareBtnEl?.addEventListener("click", async () => {
-      const url = window.location.href;
+      const sceneUrl = new URL(window.location.href);
+      sceneUrl.hash = "";
+      const url = sceneUrl.href;
       let copied = false;
       try {
         if (navigator.clipboard?.writeText) {
@@ -710,6 +726,11 @@ export class MapRenderer {
           : t("hint2d");
     }
     this.cam = this.viewMode === "3d" ? { ...DEFAULT_CAM_3D } : { ...DEFAULT_CAM_2D };
+    const phase = this.battle?.phases[this.currentPhase];
+    const activeTurn = this.turnMode === "step" ? this.turns[this.currentTurn] : null;
+    if (this.viewMode === "3d" && this.autoCamera && phase && activeTurn) {
+      this.focusCameraOnTurn(phase, activeTurn);
+    }
     this.applyCamera();
     if (this.terrain3d.ready) {
       if (this.viewMode === "3d") {
@@ -1117,7 +1138,7 @@ export class MapRenderer {
     }
   }
 
-  setPhase(phaseIndex, { initialTurn = 0, autoPlay = true, continuous = false } = {}) {
+  setPhase(phaseIndex, { initialTurn = 0, autoPlay = true, continuous = false, narrate = true, scrubbing = false } = {}) {
     if (!this.battle || !this.svgEl) return;
     this.currentPhase = phaseIndex;
     this.phaseRenderedIndex = phaseIndex;
@@ -1190,11 +1211,11 @@ export class MapRenderer {
     this.continuousPlay = Boolean(continuous || this.guidedTour);
     if (this.turnMode === "all") {
       this.stopTurnTimer();
-      this.applyTurn(-1);
+      this.applyTurn(-1, { narrate, scrubbing });
     } else {
       this.turnPlaying = Boolean(autoPlay);
       const clampedT = Math.max(0, Math.min(Math.max(0, this.turns.length - 1), Number(initialTurn) || 0));
-      this.applyTurn(clampedT);
+      this.applyTurn(clampedT, { narrate, scrubbing });
     }
 
     if (this.terrain3d.ready && this.viewMode === "3d") {
@@ -1818,12 +1839,13 @@ export class MapRenderer {
     this.guidedTour = tour || null;
     this.continuousPlay = Boolean(tour);
     this.renderGuidedTourBadge();
+    this.updateSceneSeek();
     if (notify) {
       this.emitEventChange({ tourExited: !tour });
     }
   }
 
-  emitEventChange({ tourExited = false } = {}) {
+  emitEventChange({ tourExited = false, scrubbing = false } = {}) {
     if (!this.battle) return;
     const isAll = this.turnMode === "all";
     const activeTurn = isAll ? null : this.turns[this.currentTurn];
@@ -1833,7 +1855,8 @@ export class MapRenderer {
         turnIndex: isAll ? -1 : this.currentTurn,
         eventId: activeTurn?.id || makeEventId(this.battle.id, this.currentPhase, Math.max(0, this.currentTurn)),
         playing: this.isUnifiedPlaying(),
-        tourExited
+        tourExited,
+        scrubbing
       });
     }
   }
@@ -1842,12 +1865,13 @@ export class MapRenderer {
     return this.turnMode === "step" && this.turnPlaying;
   }
 
-  pauseUnified() {
+  pauseUnified({ notify = true } = {}) {
     this.stopTurnTimer();
-    this.narrator.stop();
+    this.narrator.pause();
+    this.updateVoiceButton(false);
     if (this.battle) {
       this.renderTurnHud();
-      this.emitEventChange();
+      if (notify) this.emitEventChange();
     }
   }
 
@@ -1865,32 +1889,31 @@ export class MapRenderer {
       this.applyTurn(0);
       return;
     }
-    if (this.currentPhase >= maxP && this.currentTurn >= this.turns.length - 1) {
+    if (this.currentPhase >= maxP && this.currentTurn >= this.turns.length - 1 && this.turnRemaining === 0) {
       this.goToScene(minP, 0, { autoPlay: true, continuous: this.continuousPlay });
-      return;
-    }
-    if (this.currentTurn >= this.turns.length - 1 && this.continuousPlay && this.currentPhase < maxP) {
-      this.goToScene(this.currentPhase + 1, 0, { autoPlay: true, continuous: true });
       return;
     }
     this.startTurnTimer();
     this.emitEventChange();
   }
 
-  goToScene(phaseIndex, turnIndex = 0, { autoPlay = false, continuous = false } = {}) {
+  goToScene(phaseIndex, turnIndex = 0, { autoPlay = false, continuous = false, narrate = true, scrubbing = false } = {}) {
     if (!this.battle) return;
     const maxP = Math.max(0, this.battle.phases.length - 1);
     const pIdx = Math.max(0, Math.min(maxP, Number(phaseIndex) || 0));
+    const [tourStart, tourEnd] = this.getPhaseBounds();
+    const tourExited = Boolean(this.guidedTour && (pIdx < tourStart || pIdx > tourEnd));
+    if (tourExited) this.setGuidedTour(null, { notify: true });
     this.turnMode = "step";
     if (pIdx !== this.phaseRenderedIndex) {
-      this.setPhase(pIdx, { initialTurn: turnIndex, autoPlay, continuous });
+      this.setPhase(pIdx, { initialTurn: turnIndex, autoPlay, continuous, narrate, scrubbing });
       return;
     }
     this.stopTurnTimer();
     this.continuousPlay = Boolean(continuous || this.guidedTour);
     this.turnPlaying = Boolean(autoPlay);
     const clampedT = Math.max(0, Math.min(Math.max(0, this.turns.length - 1), Number(turnIndex) || 0));
-    this.applyTurn(clampedT);
+    this.applyTurn(clampedT, { narrate, scrubbing });
   }
 
   stepScene(delta) {
@@ -1910,6 +1933,10 @@ export class MapRenderer {
   }
 
   stopTurnTimer() {
+    if (this.turnDeadline !== null) {
+      this.turnRemaining = Math.max(0, this.turnDeadline - performance.now());
+      this.turnDeadline = null;
+    }
     if (this.turnTimer) {
       clearTimeout(this.turnTimer);
       this.turnTimer = null;
@@ -1918,6 +1945,8 @@ export class MapRenderer {
   }
 
   advanceOrFinishTurn() {
+    this.turnTimer = null;
+    this.turnDeadline = null;
     if (!this.turnPlaying || this.turnMode !== "step" || !this.battle) return;
     if (this.currentTurn < this.turns.length - 1) {
       this.applyTurn(this.currentTurn + 1);
@@ -1929,43 +1958,61 @@ export class MapRenderer {
       return;
     }
     this.turnPlaying = false;
+    this.turnRemaining = 0;
     this.renderTurnHud();
     this.emitEventChange();
   }
 
-  scheduleTurnTimeout() {
+  getTurnDuration() {
+    const firstPhase = this.getPhaseBounds()[0];
+    let index = this.currentTurn;
+    for (let phase = firstPhase; phase < this.currentPhase; phase++) {
+      index += getPhaseSceneCount(this.battle, phase);
+    }
+    return (this.guidedTour?.sceneDurations?.[index] ?? TURN_DURATION_MS / 1000) * 1000;
+  }
+
+  scheduleTurnTimeout(minDelay = 0) {
     if (this.turnTimer) clearTimeout(this.turnTimer);
     if (!this.turnPlaying || this.turnMode !== "step") return;
-    const [, maxP] = this.getPhaseBounds();
-    if (this.currentTurn >= this.turns.length - 1 && (!this.continuousPlay || this.currentPhase >= maxP)) {
-      this.turnPlaying = false;
-      this.renderTurnHud();
-      this.emitEventChange();
-      return;
-    }
-    this.turnTimer = setTimeout(() => this.advanceOrFinishTurn(), TURN_DURATION_MS);
+    const remaining = this.turnDeadline === null
+      ? this.turnRemaining ?? this.getTurnDuration()
+      : this.turnDeadline - performance.now();
+    const delay = Math.max(minDelay, remaining);
+    this.turnDeadline = performance.now() + delay;
+    this.turnTimer = setTimeout(() => this.advanceOrFinishTurn(), delay);
   }
 
   scheduleNextTurnAfterSpeech() {
-    if (!this.turnPlaying || this.turnMode !== "step") return;
-    const [, maxP] = this.getPhaseBounds();
-    if (this.currentTurn >= this.turns.length - 1 && (!this.continuousPlay || this.currentPhase >= maxP)) {
-      this.turnPlaying = false;
-      this.renderTurnHud();
-      this.emitEventChange();
-      return;
-    }
-    if (this.turnTimer) clearTimeout(this.turnTimer);
-    this.turnTimer = setTimeout(() => this.advanceOrFinishTurn(), 850);
+    this.scheduleTurnTimeout(850);
   }
 
   startTurnTimer() {
     if (this.turnMode !== "step" || this.turns.length === 0) return;
     this.turnPlaying = true;
-    this.renderTurnHud();
+    const phase = this.battle?.phases?.[this.currentPhase];
+    const lang = getLang();
     if (this.narrator.isEnabled()) {
-      this.speakCurrentTurn(() => this.scheduleNextTurnAfterSpeech());
+      const canResume = phase && this.narrator.canResume(this.battle.id, phase.id, this.currentTurn, lang);
+      if (!canResume) {
+        this.turnRemaining = null;
+      }
+      this.turnDeadline = performance.now() + (this.turnRemaining ?? this.getTurnDuration());
+      this.renderTurnHud();
+      if (canResume) {
+        this.narrator.resume({
+          onStart: () => this.updateVoiceButton(true),
+          onEnd: () => {
+            this.updateVoiceButton(false);
+            this.scheduleNextTurnAfterSpeech();
+          }
+        });
+      } else {
+        this.speakCurrentTurn(() => this.scheduleNextTurnAfterSpeech());
+      }
     } else {
+      this.turnDeadline = performance.now() + (this.turnRemaining ?? this.getTurnDuration());
+      this.renderTurnHud();
       this.scheduleTurnTimeout();
     }
   }
@@ -2040,7 +2087,13 @@ export class MapRenderer {
 
   computeComparePairs(phase, activeTurn, isAll) {
     if (isAll || !activeTurn?.meta?.compareUnits?.length) return [];
-    const formations = phase?.formations || [];
+    const forward = Boolean(activeTurn.meta.compareToNextPhase);
+    const formations = (forward
+      ? this.battle.phases[this.currentPhase + 1]?.formations
+      : phase?.formations) || [];
+    const origins = forward
+      ? new Map((phase?.formations || []).map((unit) => [unit.id, unit]))
+      : this.prevPhaseCoords;
     const pairs = [];
     for (const item of activeTurn.meta.compareUnits) {
       if (item && typeof item === "object" && Array.isArray(item.from) && Array.isArray(item.to)) {
@@ -2048,25 +2101,48 @@ export class MapRenderer {
           id: item.id || "vec",
           from: { x: item.from[0], y: item.from[1] },
           to: { x: item.to[0], y: item.to[1] },
-          side: item.side === "blue" ? "blue" : "red"
+          side: item.side === "blue" ? "blue" : "red",
+          forward
         });
         continue;
       }
       const unit = formations.find((u) => u.id === item);
-      const prev = this.prevPhaseCoords.get(item);
+      const prev = origins.get(item);
       if (!unit || !prev) continue;
       if (Math.hypot(unit.x - prev.x, unit.y - prev.y) < 10) continue;
       pairs.push({
         id: item,
         from: prev,
         to: { x: unit.x, y: unit.y },
-        side: unit.side === "red" ? "red" : "blue"
+        side: unit.side === "red" ? "red" : "blue",
+        forward
       });
     }
     return pairs;
   }
 
-  applyTurn(turnIdx) {
+  renderComparePairSvg(fx, fy, tx, ty, side, forward) {
+    let svg = `<circle class="compare-ghost-dot side-${side}" cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="4.5" />`;
+    svg += `<line class="compare-ghost-line side-${side}" x1="${fx.toFixed(1)}" y1="${fy.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" />`;
+    if (forward) {
+      const dx = tx - fx;
+      const dy = ty - fy;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const px = -uy;
+      const py = ux;
+      const ax1 = tx - ux * 9 + px * 4.5;
+      const ay1 = ty - uy * 9 + py * 4.5;
+      const ax2 = tx - ux * 9 - px * 4.5;
+      const ay2 = ty - uy * 9 - py * 4.5;
+      svg += `<circle class="compare-target-ring side-${side}" cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="6.2" />`;
+      svg += `<polygon class="compare-target-head side-${side}" points="${tx.toFixed(1)},${ty.toFixed(1)} ${ax1.toFixed(1)},${ay1.toFixed(1)} ${ax2.toFixed(1)},${ay2.toFixed(1)}" />`;
+    }
+    return svg;
+  }
+
+  applyTurn(turnIdx, { narrate = true, scrubbing = false } = {}) {
     if (!this.battle) return;
     const phase = this.battle.phases[this.currentPhase];
     if (!phase) return;
@@ -2075,6 +2151,10 @@ export class MapRenderer {
       clearTimeout(this.turnTimer);
       this.turnTimer = null;
     }
+    this.narrator.stop();
+    this.updateVoiceButton();
+    this.turnDeadline = null;
+    this.turnRemaining = null;
 
     const isAll = turnIdx < 0 || this.turnMode === "all";
     this.currentTurn = isAll ? this.turns.length - 1 : Math.max(0, Math.min(this.turns.length - 1, turnIdx));
@@ -2082,6 +2162,7 @@ export class MapRenderer {
     this.phaseStartTime = this.turnStartTime;
 
     const activeTurn = isAll ? null : this.turns[this.currentTurn];
+    if (this.turnPlaying && !isAll) this.turnDeadline = this.turnStartTime + this.getTurnDuration();
     const theme = this.battle.theme || {};
     this.activeComparePairs = this.computeComparePairs(phase, activeTurn, isAll);
 
@@ -2104,10 +2185,10 @@ export class MapRenderer {
     if (typeof this.onTurnChange === "function") {
       this.onTurnChange(isAll ? -1 : this.currentTurn, this.turns.length);
     }
-    this.emitEventChange();
+    this.emitEventChange({ scrubbing });
 
     // 语音解说与战地音效同步：开启声音时等待男声解说完毕再推进下一回合
-    if (this.narrator.isEnabled()) {
+    if (narrate && this.narrator.isEnabled()) {
       if (!isAll && activeTurn?.sfx) {
         this.narrator.playCue(activeTurn.sfx);
       }
@@ -2157,11 +2238,7 @@ export class MapRenderer {
         compareLayer.innerHTML = "";
       } else {
         compareLayer.innerHTML = this.activeComparePairs
-          .map(
-            ({ from, to, side }) =>
-              `<circle class="compare-ghost-dot side-${side}" cx="${from.x.toFixed(1)}" cy="${from.y.toFixed(1)}" r="4.5" />` +
-              `<line class="compare-ghost-line side-${side}" x1="${from.x.toFixed(1)}" y1="${from.y.toFixed(1)}" x2="${to.x.toFixed(1)}" y2="${to.y.toFixed(1)}" />`
-          )
+          .map(({ from, to, side, forward }) => this.renderComparePairSvg(from.x, from.y, to.x, to.y, side, forward))
           .join("");
       }
     }
@@ -2558,7 +2635,6 @@ export class MapRenderer {
     const prevBtn = this.stageEl.querySelector("#turn-prev");
     const nextBtn = this.stageEl.querySelector("#turn-next");
     const modeBtn = this.stageEl.querySelector("#turn-mode-btn");
-    const dotsEl = this.stageEl.querySelector("#turn-dots");
 
     if (actorEl) {
       const actor = isAll ? "all" : activeTurn?.actor || "red";
@@ -2597,42 +2673,52 @@ export class MapRenderer {
       }
     }
     this.renderLiveCommentary(isAll);
+    this.updateSceneSeek();
     const [minP, maxP] = this.getPhaseBounds();
     if (playBtn) {
       playBtn.textContent = this.turnPlaying && !isAll ? "⏸" : "▶";
       playBtn.title = this.turnPlaying && !isAll ? t("turnPause") : t("turnPlay");
+      playBtn.setAttribute("aria-label", playBtn.title);
       playBtn.classList.toggle("is-playing", this.turnPlaying && !isAll);
     }
     if (prevBtn) {
       prevBtn.disabled = !isAll && this.currentPhase <= minP && this.currentTurn <= 0;
       prevBtn.title = t("turnPrev");
+      prevBtn.setAttribute("aria-label", prevBtn.title);
     }
     if (nextBtn) {
       nextBtn.disabled = !isAll && this.currentPhase >= maxP && this.currentTurn >= totalTurns - 1;
       nextBtn.title = t("turnNext");
+      nextBtn.setAttribute("aria-label", nextBtn.title);
     }
     if (modeBtn) {
       modeBtn.textContent = isAll ? t("turnStepMode") : t("turnOverview");
       modeBtn.title = t("turnOverviewTitle");
       modeBtn.classList.toggle("is-active", isAll);
     }
-    if (dotsEl) {
-      dotsEl.innerHTML = this.turns
-        .map(
-          (tObj, idx) =>
-            `<button type="button" class="turn-dot ${isAll || idx < this.currentTurn ? "is-done" : ""} ${
-              !isAll && idx === this.currentTurn ? "is-active" : ""
-            }" data-turn-dot="${idx}" title="${tObj.date || ""} ${tObj.title || ""}" aria-label="${t("turnLabelPrefix")}${
-              idx + 1
-            }${t("turnLabelSuffix")}"></button>`
-        )
-        .join("");
-      dotsEl.querySelectorAll("[data-turn-dot]").forEach((dot) => {
-        dot.addEventListener("click", () => this.goToTurn(Number(dot.dataset.turnDot)));
-      });
-    }
     if (this.turnProgressFillEl) {
       this.turnProgressFillEl.style.width = isAll ? "100%" : "0%";
+    }
+  }
+
+  updateSceneSeek() {
+    if (!this.sceneSeekEl || !this.battle) return;
+    const isAll = this.turnMode === "all";
+    this.sceneSeekEl.closest(".scene-timeline")?.classList.toggle("is-overview", isAll);
+    const [first, last] = this.getPhaseBounds();
+    this.sceneStops = [];
+    for (let phase = first; phase <= last; phase++) {
+      const count = getPhaseSceneCount(this.battle, phase);
+      for (let turn = 0; turn < count; turn++) this.sceneStops.push({ phase, turn });
+    }
+    const index = this.sceneStops.findIndex(({ phase, turn }) => phase === this.currentPhase && turn === this.currentTurn);
+    const scene = this.turns[this.currentTurn];
+    this.sceneSeekEl.max = this.sceneStops.length - 1;
+    this.sceneSeekEl.value = Math.max(0, index);
+    this.sceneSeekEl.setAttribute("aria-label", t("sceneSeek"));
+    this.sceneSeekEl.setAttribute("aria-valuetext", isAll ? t("turnOverview") : [scene?.date, scene?.title].filter(Boolean).join(" · "));
+    if (this.scenePositionEl) {
+      this.scenePositionEl.textContent = isAll ? t("turnOverview") : `${Math.max(0, index) + 1} / ${this.sceneStops.length}`;
     }
   }
 
@@ -2686,7 +2772,7 @@ export class MapRenderer {
             const title = s.title?.[lang] || s.title?.zh || "";
             const note = s.note?.[lang] || s.note?.zh || "";
             const link = s.url
-              ? `<a href="${s.url}" target="_blank" rel="noreferrer">${lang === "en" ? "Open primary source ↗" : "查看史料出处 ↗"}</a>`
+              ? `<a href="${s.url}" target="_blank" rel="noreferrer">${lang === "en" ? "Read source ↗" : "查看史料出处 ↗"}</a>`
               : "";
             return `<div class="cast-source-entry"><strong>${title}</strong><p>${note}</p>${link}</div>`;
           })
@@ -2697,8 +2783,13 @@ export class MapRenderer {
       this.castSourcesEl.hidden = !this.sourcesOpen;
     }
     if (this.castPrecisionEl) {
-      const precText = activeTurn?.meta?.precision?.[lang] || activeTurn?.meta?.precision?.zh || getDefaultPrecision(lang);
-      this.castPrecisionEl.textContent = `${t("precisionTag")} · ${precText}`;
+      const precision = activeTurn?.meta?.precision?.[lang] || activeTurn?.meta?.precision?.zh;
+      const notes = [t("precisionTag"), precision || getDefaultPrecision(lang)];
+      if (precision && !/3D|三维/.test(precision)) notes.push(t("terrainProvenance"));
+      if (this.activeComparePairs.length) {
+        notes.push(activeTurn?.meta?.compareToNextPhase ? t("compareKeyNext") : t("compareKey"));
+      }
+      this.castPrecisionEl.textContent = notes.join(" · ");
     }
 
     // 平滑滚动至最新一条解说（游戏直播实况滚动感）
@@ -2748,12 +2839,17 @@ export class MapRenderer {
       // 放大视角时自动展开全部呼吸收拢的兵牌与地名
       this.stageEl.classList.toggle("is-zoomed-in", this.glCam.zoom >= 1.4);
 
-      // 更新回合进度细条
+      // 更新回合进度细条（开启男声解说时精确同步音频播放进度）
       if (this.turnProgressFillEl && this.turnMode === "step") {
-        const pct = this.turnPlaying
-          ? Math.min(100, (turnElapsed / (TURN_DURATION_MS / 1000)) * 100)
-          : Math.min(100, (turnElapsed / 1.25) * 100);
-        this.turnProgressFillEl.style.width = `${pct.toFixed(1)}%`;
+        const audioProg = this.narrator.getProgress();
+        if (audioProg !== null) {
+          this.turnProgressFillEl.style.width = `${(audioProg * 100).toFixed(1)}%`;
+        } else {
+          const duration = this.getTurnDuration();
+          const remaining = this.turnDeadline === null ? this.turnRemaining ?? duration : this.turnDeadline - now;
+          const pct = Math.max(0, Math.min(100, (1 - remaining / duration) * 100));
+          this.turnProgressFillEl.style.width = `${pct.toFixed(1)}%`;
+        }
       }
 
       this.terrain3d.updateCamera(this.glCam);
@@ -2871,10 +2967,7 @@ export class MapRenderer {
             const pf = this.terrain3d.project(pair.from.x, pair.from.y, 0.026);
             const pt = this.terrain3d.project(pair.to.x, pair.to.y, 0.026);
             if (!pf.visible && !pt.visible) continue;
-            parts.push(
-              `<circle class="compare-ghost-dot side-${pair.side}" cx="${pf.sx.toFixed(1)}" cy="${pf.sy.toFixed(1)}" r="4.5" />` +
-                `<line class="compare-ghost-line side-${pair.side}" x1="${pf.sx.toFixed(1)}" y1="${pf.sy.toFixed(1)}" x2="${pt.sx.toFixed(1)}" y2="${pt.sy.toFixed(1)}" />`
-            );
+            parts.push(this.renderComparePairSvg(pf.sx, pf.sy, pt.sx, pt.sy, pair.side, pair.forward));
           }
           this.glCompareSvgEl.innerHTML = parts.join("");
           this._glCompareEmpty = false;

@@ -1,11 +1,11 @@
 // 战史沙盘 · 应用入口
 // 负责路由（档案馆 / 战役沙盘）、主题切换与各章节渲染；地图交互交由 MapRenderer。
 
-import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=16";
+import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=21";
 import { normalizeBattle } from "./engine/schema.js?v=16";
-import { MapRenderer } from "./engine/mapRenderer.js?v=17";
-import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=5";
-import { GUIDED_TOURS, resolveEventId } from "./data/eventMeta.js?v=2";
+import { MapRenderer } from "./engine/mapRenderer.js?v=20";
+import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=8";
+import { GUIDED_TOURS, resolveEventId } from "./data/eventMeta.js?v=4";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -23,6 +23,9 @@ const state = {
 
 let mapRenderer = null;
 let revealObserver = null;
+let routeRevision = 0;
+let urlSyncTimer = null;
+let lastUrlSyncTime = 0;
 
 /* ---------------- 主题 ---------------- */
 
@@ -196,16 +199,32 @@ function bindHomeLinks(root = document) {
 /* ---------------- 路由与分享深链 ---------------- */
 
 function syncUrl({ battleId = state.battleId, eventId = state.eventId, tourId = state.tourId, push = false } = {}) {
+  if (urlSyncTimer) {
+    clearTimeout(urlSyncTimer);
+    urlSyncTimer = null;
+  }
+  lastUrlSyncTime = performance.now();
   const url = new URL(window.location.href);
-  url.hash = "";
+  if (push) url.hash = "";
   if (battleId) url.searchParams.set("battle", battleId);
   else url.searchParams.delete("battle");
   if (battleId && eventId) url.searchParams.set("event", eventId);
   else url.searchParams.delete("event");
   if (battleId && tourId) url.searchParams.set("tour", tourId);
   else url.searchParams.delete("tour");
+  if (!push && url.href === window.location.href) return;
   if (push) window.history.pushState({ battle: battleId, event: eventId, tour: tourId }, "", url.toString());
   else window.history.replaceState({ battle: battleId, event: eventId, tour: tourId }, "", url.toString());
+}
+
+function syncUrlThrottled(opts) {
+  const elapsed = performance.now() - lastUrlSyncTime;
+  if (elapsed >= 200) {
+    syncUrl(opts);
+    return;
+  }
+  if (urlSyncTimer) clearTimeout(urlSyncTimer);
+  urlSyncTimer = setTimeout(() => syncUrl(opts), 200 - elapsed);
 }
 
 function navigate(battleId, { eventId = null, tourId = null } = {}) {
@@ -214,27 +233,30 @@ function navigate(battleId, { eventId = null, tourId = null } = {}) {
 }
 
 async function route(options = {}) {
+  const revision = ++routeRevision;
   const params = new URLSearchParams(window.location.search);
   const tourParam = params.get("tour");
-  const tour = tourParam && GUIDED_TOURS[tourParam] ? GUIDED_TOURS[tourParam] : null;
-  const id = params.get("battle") || tour?.battleId || null;
-  const eventId = params.get("event") || tour?.startEventId || null;
+  const requestedTour = tourParam && Object.hasOwn(GUIDED_TOURS, tourParam) ? GUIDED_TOURS[tourParam] : null;
+  const id = params.get("battle") || requestedTour?.battleId || null;
+  const tour = requestedTour?.battleId === id ? requestedTour : null;
+  const eventId = params.get("event");
   const entry = id ? getBattleEntry(id) : null;
   if (entry && entry.status === "available") {
-    await showBattle(id, { eventId, tourId: tour ? tour.id : null });
+    await showBattle(id, { eventId, tourId: tour?.id, revision });
   } else {
     showHome();
   }
-  if (options.scrollTop) window.scrollTo(0, 0);
+  if (options.scrollTop && revision === routeRevision) window.scrollTo(0, 0);
 }
 
 function showHome() {
-  mapRenderer?.pauseUnified();
+  mapRenderer?.pauseUnified({ notify: false });
   mapRenderer?.stopRouteMovers();
   state.battleId = null;
   state.battle = null;
   state.eventId = null;
   state.tourId = null;
+  document.body.classList.remove("is-loading");
   applyTheme(null);
   document.body.dataset.view = "home";
   $("#view-home").hidden = false;
@@ -250,21 +272,20 @@ function showHome() {
   setupReveal();
 }
 
-async function showBattle(id, { forceReload = false, preserveEvent = false, eventId = null, tourId = null } = {}) {
-  mapRenderer?.pauseUnified();
+async function showBattle(id, { forceReload = false, preserveEvent = false, eventId = null, tourId = null, revision = ++routeRevision } = {}) {
+  const wasPlaying = mapRenderer?.isUnifiedPlaying();
+  mapRenderer?.pauseUnified({ notify: false });
   const targetEventId = preserveEvent ? state.eventId : eventId;
   const targetTourId = preserveEvent ? state.tourId : tourId;
+  const tour = targetTourId ? GUIDED_TOURS[targetTourId] : null;
+  const autoplay = preserveEvent ? wasPlaying : !targetEventId;
   const prevOrderSide = preserveEvent ? state.orderSide : "red";
   if (!forceReload && state.battleId === id && state.battle) {
-    document.body.dataset.view = "battle";
-    if (targetTourId && GUIDED_TOURS[targetTourId]) {
-      state.tourId = targetTourId;
-      mapRenderer.setGuidedTour(GUIDED_TOURS[targetTourId]);
-    }
-    if (targetEventId) {
-      const resolved = resolveEventId(state.battle, targetEventId);
-      if (resolved) mapRenderer.goToScene(resolved.phaseIndex, resolved.turnIndex, { autoPlay: Boolean(targetTourId) });
-    }
+    document.body.classList.remove("is-loading");
+    const resolved = resolveEventId(state.battle, targetEventId || tour?.startEventId);
+    state.tourId = tour?.id ?? null;
+    mapRenderer.setGuidedTour(tour);
+    mapRenderer.goToScene(resolved?.phaseIndex ?? 0, resolved?.turnIndex ?? 0, { autoPlay: autoplay, continuous: Boolean(tour) });
     return;
   }
 
@@ -279,18 +300,20 @@ async function showBattle(id, { forceReload = false, preserveEvent = false, even
       battle = raw;
     }
   } catch (err) {
+    if (revision !== routeRevision) return;
     console.error("Failed to load battle:", err);
     document.body.classList.remove("is-loading");
     showHome();
     return;
   }
+  if (revision !== routeRevision) return;
 
   state.battleId = id;
   state.battle = battle;
-  state.tourId = targetTourId && GUIDED_TOURS[targetTourId]?.battleId === id ? targetTourId : null;
+  state.tourId = tour?.id ?? null;
   state.orderSide = prevOrderSide;
 
-  const resolved = targetEventId ? resolveEventId(battle, targetEventId) : null;
+  const resolved = resolveEventId(battle, targetEventId || tour?.startEventId);
   const initialPhase = resolved ? resolved.phaseIndex : 0;
   const initialTurn = resolved ? resolved.turnIndex : 0;
   state.phase = initialPhase;
@@ -301,6 +324,8 @@ async function showBattle(id, { forceReload = false, preserveEvent = false, even
   $("#view-battle").hidden = false;
   $("#sandtable")?.classList.remove("is-mobile-brief-open");
   $("#mobile-brief-btn")?.setAttribute("aria-expanded", "false");
+  const mobileBrief = $("#mobile-brief-btn");
+  if (mobileBrief) mobileBrief.textContent = t("mobileBriefBtn");
 
   document.title = `${battle.title}${t("battleTitleSuffix")}`;
   $('meta[name="description"]')?.setAttribute(
@@ -330,10 +355,8 @@ async function showBattle(id, { forceReload = false, preserveEvent = false, even
   renderFooter(battle);
   renderBattleMenu();
 
-  // 打开分享深链（有 ?event= 且无 ?tour=）时精准停留在那一幕；导览模式或默认进入时平滑自动播放
-  const shouldAutoPlay = Boolean(state.tourId) || (!targetEventId && !preserveEvent);
   syncPhaseChrome(initialPhase);
-  mapRenderer.goToScene(initialPhase, initialTurn, { autoPlay: shouldAutoPlay, continuous: Boolean(state.tourId) });
+  mapRenderer.goToScene(initialPhase, initialTurn, { autoPlay: autoplay, continuous: Boolean(tour) });
   setupReveal();
   requestAnimationFrame(() => document.body.classList.remove("is-loading"));
 }
@@ -368,7 +391,7 @@ function renderPhaseControls(battle) {
     .join("");
   $$(".phase-button", container).forEach((btn) =>
     btn.addEventListener("click", () => {
-      mapRenderer?.goToScene(Number(btn.dataset.phase), 0, { autoPlay: true });
+      mapRenderer?.goToScene(Number(btn.dataset.phase), 0);
     })
   );
   $("#brief-total").textContent = `/ ${pad(battle.phases.length)}`;
@@ -435,7 +458,7 @@ function renderDossier(battle, index) {
   $$("#dossier-list .dossier-row").forEach((row) => {
     const jump = () => {
       mapRenderer?.goToTurn(Number(row.dataset.turnIdx));
-      $("#sandtable").scrollIntoView({ behavior: "smooth" });
+      scrollToSandtable();
     };
     row.addEventListener("click", jump);
     row.addEventListener("keydown", (e) => {
@@ -528,17 +551,26 @@ function renderChronicle(battle) {
         <time>${ev.date}</time><span class="event-dot"></span>
         <div class="event-body"><small>${ev.stage}</small><h3>${ev.title}</h3><p>${ev.desc}</p></div>
         <span class="event-tag">${ev.tag}</span>`;
-      return ev.isOutcome
-        ? `<div class="timeline-event timeline-outcome">${inner}</div>`
-        : `<button class="timeline-event" type="button" data-phase="${ev.phaseIndex}">${inner}</button>`;
+      return ev.isOutcome || ev.isBackground
+        ? `<div class="timeline-event${ev.isOutcome ? " timeline-outcome" : " timeline-background"}">${inner}</div>`
+        : `<button class="timeline-event" type="button" data-phase="${ev.phaseIndex}" data-event="${ev.eventId || ""}">${inner}</button>`;
     })
     .join("");
   $$("#timeline-list button[data-phase]").forEach((btn) =>
     btn.addEventListener("click", () => {
-      mapRenderer?.goToScene(Number(btn.dataset.phase), 0, { autoPlay: false });
-      $("#sandtable").scrollIntoView({ behavior: "smooth" });
+      const scene = resolveEventId(battle, btn.dataset.event);
+      mapRenderer?.goToScene(scene?.phaseIndex ?? Number(btn.dataset.phase), scene?.turnIndex ?? 0);
+      scrollToSandtable();
     })
   );
+}
+
+function scrollToSandtable() {
+  const url = new URL(window.location.href);
+  url.hash = "sandtable";
+  window.history.replaceState(window.history.state, "", url);
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  $("#sandtable").scrollIntoView({ behavior: reducedMotion ? "instant" : "smooth" });
 }
 
 function renderClosing(battle) {
@@ -585,7 +617,7 @@ function syncPlayButton(playing) {
   $(".play-label", btn).textContent = playing ? t("pauseTour") : t("playTour");
 }
 
-function handlePlaybackEvent({ phaseIndex, turnIndex, eventId, playing, tourExited }) {
+function handlePlaybackEvent({ phaseIndex, turnIndex, eventId, playing, tourExited, scrubbing = false }) {
   if (!state.battle) return;
   if (phaseIndex !== state.phase) {
     syncPhaseChrome(phaseIndex);
@@ -594,7 +626,9 @@ function handlePlaybackEvent({ phaseIndex, turnIndex, eventId, playing, tourExit
   if (tourExited) state.tourId = null;
   highlightDossierTurn(turnIndex);
   syncPlayButton(playing);
-  syncUrl({ battleId: state.battleId, eventId: state.eventId, tourId: state.tourId, push: false });
+  const payload = { battleId: state.battleId, eventId: state.eventId, tourId: state.tourId, push: false };
+  if (scrubbing) syncUrlThrottled(payload);
+  else syncUrl(payload);
 }
 
 /* ---------------- 全局事件 ---------------- */
@@ -609,12 +643,12 @@ function setupGlobalEvents() {
     mapRenderer?.goToScene(Math.min(state.battle.phases.length - 1, state.phase + 1), 0, { autoPlay: false });
   });
 
-  // 首页精选导览直达按钮（三渡 → 四渡 90 秒导览 & 诺曼底多滩对照验证）
+  // 导览入口自动播放。带有具体事件的链接打开后停留在该幕。
   $$("[data-tour-launch]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tour = GUIDED_TOURS[btn.dataset.tourLaunch];
       if (!tour) return;
-      navigate(tour.battleId, { eventId: tour.startEventId, tourId: tour.id });
+      navigate(tour.battleId, { tourId: tour.id });
     });
   });
 
@@ -669,7 +703,7 @@ function setupGlobalEvents() {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeMenu();
-    if (!state.battle || e.target.closest("input, textarea")) return;
+    if (!state.battle || e.defaultPrevented || e.target.closest("input, textarea, select, [contenteditable]")) return;
     if (e.key === "ArrowRight") {
       mapRenderer?.stepScene(1);
     } else if (e.key === "ArrowLeft") {

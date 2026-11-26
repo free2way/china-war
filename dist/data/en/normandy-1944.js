@@ -271,7 +271,7 @@ export default {
   chronicle: {
     eyebrow: "JUN 5 – AUG 25, 1944",
     title: "50 days of combat,<br />unlocking Western Europe.",
-    deck: "Click any event to jump the 3D sandtable to its phase.",
+    deck: "Click any event to return directly to that scene.",
     events: [
       { date: "Jun 5 Night", stage: "Launch", title: "Eisenhower gives the order: 'OK, Let's Go'", desc: "Seizing the June 6 weather window, ~6,900 ships and three airborne divisions set out.", tag: "Decision", phaseIndex: 0 },
       { date: "Jun 6 00:16", stage: "Airborne", title: "Pegasus Bridge & Ste-Mère-Église seized", desc: "British 6th and US 82nd/101st Airborne fired the opening shots on both flanks.", tag: "Airborne", phaseIndex: 0 },

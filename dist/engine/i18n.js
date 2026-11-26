@@ -102,13 +102,20 @@ const DICT = {
     precisionTag: "图例说明",
     mobileBriefBtn: "简报",
     mobileBriefClose: "收起简报",
-    tourBadgeChishui: "精选 90 秒导览 · 三渡 → 四渡",
+    sceneSeek: "事件时间轴",
+    compareKey: "空心点为原位置，虚线连至新位置",
+    compareKeyNext: "虚线箭头指向各部向西集结方向",
+    terrainProvenance: "3D 地形为程序模拟",
     tourExitBtn: "退出导览",
     homeFlagshipEyebrow: "推荐体验 · 90 秒核心导览",
     homeFlagshipTitle: "三渡 → 四渡赤水：如何用一次佯动调开四十万大军？",
     homeFlagshipDeck: "同比例同视角前后对照：看清茅台西渡如何把敌军主力吸向古蔺，主力再连夜折返二郎滩跳出合围。",
     homeFlagshipCta: "观看三渡到四渡 →",
     homeFlagshipNormandy: "诺曼底多滩对照验证 →",
+    homeSvgGulin: "古蔺 · 敌重兵西移",
+    homeSvgErlang: "二郎滩 · 秘密东渡",
+    homeSvgMaotai: "茅台",
+    homeSvgWujiang: "南渡乌江",
 
     // Layer toggles & HUD
     layerFormations: "部队",
@@ -270,13 +277,20 @@ const DICT = {
     precisionTag: "Map Note",
     mobileBriefBtn: "Brief",
     mobileBriefClose: "Hide Brief",
-    tourBadgeChishui: "90s Guided Tour · 3rd → 4th Crossing",
+    sceneSeek: "Event timeline",
+    compareKey: "Open circles mark earlier positions; dashed lines lead to later positions",
+    compareKeyNext: "Dashed arrows indicate imminent convergence vectors",
+    terrainProvenance: "Procedural 3D terrain",
     tourExitBtn: "Exit Tour",
     homeFlagshipEyebrow: "FEATURED · 90-SECOND GUIDED TOUR",
     homeFlagshipTitle: "3rd → 4th Chishui Crossing: Luring 400,000 Troops West",
     homeFlagshipDeck: "Locked-frame before & after comparison: watch the Maotai feint pull KMT columns west before the Red Army doubles back east.",
     homeFlagshipCta: "Watch 3rd → 4th Crossing →",
     homeFlagshipNormandy: "Normandy Multi-Beach Demo →",
+    homeSvgGulin: "Gulin · KMT Pulled West",
+    homeSvgErlang: "Erlangtan · Secret Reversal",
+    homeSvgMaotai: "Maotai",
+    homeSvgWujiang: "South Across Wu R.",
 
     // Layer toggles & HUD
     layerFormations: "Units",
@@ -536,7 +550,14 @@ export function applyBattleOverlay(battle, overlay) {
             : battle.logic.decisionLoop
         }
       : battle.logic,
-    chronicle: overlay.chronicle ? { ...battle.chronicle, ...overlay.chronicle } : battle.chronicle,
+    chronicle: overlay.chronicle ? {
+      ...battle.chronicle,
+      ...overlay.chronicle,
+      events: overlay.chronicle.events?.map((event, index) => ({
+        ...battle.chronicle?.events?.[index],
+        ...event
+      })) ?? battle.chronicle?.events
+    } : battle.chronicle,
     sources: overlay.sources ?? battle.sources
   };
 }

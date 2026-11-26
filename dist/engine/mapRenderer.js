@@ -2,11 +2,11 @@
 // 支持真实起伏地形与实时软阴影、实体 3D 森林与城池关隘、分时代不同军装 3D 立体小人方阵/骑兵/坦克、
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
-import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=16";
+import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=24";
 import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=8";
 import { VoiceNarrator } from "./voiceNarrator.js?v=3";
-import { getPhaseTurnScript } from "../data/turnScripts.js?v=1";
-import { makeEventId, getEventMeta, getDefaultPrecision, getPhaseSceneCount } from "../data/eventMeta.js?v=4";
+import { getPhaseTurnScript } from "../data/turnScripts.js?v=2";
+import { makeEventId, getEventMeta, getDefaultPrecision, getPhaseSceneCount } from "../data/eventMeta.js?v=5";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const PLATE_HEIGHT = 30;
@@ -246,7 +246,7 @@ function inferBattleRouteKind(battle) {
   if (!battle) return "infantry";
   if (battle.id === "guandu-200") return "cavalry";
   if (battle.id === "normandy-1944") return "navy";
-  if (battle.id === "market-garden-1944") return "armor";
+  if (battle.id === "market-garden-1944" || battle.id === "sinai-1973") return "armor";
   return "infantry";
 }
 
@@ -2610,7 +2610,8 @@ export class MapRenderer {
       "guandu-200": [38, 46, 78, 92],
       "changjin-1950": [62, 74, 68, 84],
       "normandy-1944": [48, 62, 76, 90],
-      "market-garden-1944": [72, 58, 40, 26]
+      "market-garden-1944": [72, 58, 40, 26],
+      "sinai-1973": [24, 52, 74, 92]
     };
     const curve = curves[this.battle.id];
     const targetPct = curve

@@ -338,6 +338,12 @@ body[data-theme="ww2-allied-ops"] .sandtable-bg {
 body[data-theme="ww2-airborne-olive"] .sandtable-bg {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cpath d='M32 26v12M26 32h12' fill='none' stroke='%23c9a452' stroke-opacity='.09' stroke-width='1'/%3E%3C/svg%3E");
 }
+body[data-theme="sinai-desert-ochre"] .sandtable-bg {
+  background-image:
+    repeating-linear-gradient(-18deg, transparent 0 34px, rgba(224, 179, 84, .04) 35px, transparent 36px),
+    linear-gradient(rgba(92, 160, 181, .035) 1px, transparent 1px);
+  background-size: auto, 52px 52px;
+}
 
 .sandtable-side { position: relative; z-index: 3; display: flex; flex-direction: column; gap: 12px; min-height: 0; padding-top: 4px; transition: opacity .25s ease; }
 .hero-copy .eyebrow { color: var(--on-dark-3); }
@@ -1812,6 +1818,12 @@ body[data-theme="winter-frost"] .map-stage[data-map-style="game"] {
     radial-gradient(88% 66% at 50% 14%, rgba(138, 206, 248, .30), transparent 64%),
     radial-gradient(60% 45% at 50% 85%, rgba(44, 86, 128, .22), transparent 72%),
     linear-gradient(180deg, #172a3d 0%, #101e2c 60%, #0a121b 100%);
+}
+body[data-theme="sinai-desert-ochre"] .map-stage[data-map-style="game"] {
+  background:
+    radial-gradient(84% 62% at 52% 16%, rgba(244, 176, 92, .26), transparent 64%),
+    radial-gradient(56% 48% at 44% 78%, rgba(56, 152, 178, .18), transparent 70%),
+    linear-gradient(180deg, #281f15 0%, #1b150e 60%, #110d09 100%);
 }
 
 /* 游戏风：金属描金城池/关隘缎带铭牌 */

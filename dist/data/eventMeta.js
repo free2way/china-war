@@ -1,14 +1,15 @@
 // 战史沙盘 · 稳定事件 ID、导览剧本镜头、前后对照位移与事件级史料出处
 // 与 turnScripts.js 通过 (battleId, phaseId, turnIndex) 一一对应，确保时间线、地图、字幕、语音与分享链接指向同一幕。
 
-import { getPhaseTurnScript } from "./turnScripts.js?v=1";
+import { getPhaseTurnScript } from "./turnScripts.js?v=2";
 
 const BATTLE_PREFIX = {
   "chishui-1935": "chishui",
   "guandu-200": "guandu",
   "changjin-1950": "changjin",
   "normandy-1944": "normandy",
-  "market-garden-1944": "mg"
+  "market-garden-1944": "mg",
+  "sinai-1973": "sinai"
 };
 
 // 重点导览样板配置（首页直达入口与连续跨阶段导览模式）
@@ -41,6 +42,20 @@ export const GUIDED_TOURS = {
       zh: "验证同一套事件时间轴与前后对照机制在多登陆点、多战区复杂战役中的复用效果。",
       en: "Validating the same event timeline, locked-frame comparison, and source architecture across a multi-beach invasion."
     }
+  },
+  "sinai-gazelle": {
+    id: "sinai-gazelle",
+    battleId: "sinai-1973",
+    startEventId: "sinai-2-3",
+    endEventId: "sinai-4-4",
+    phaseRange: [1, 3],
+    durationLabel: { zh: "现代合成破局导览", en: "Combined-Arms Tour" },
+    title: { zh: "西奈反击 · 穿隙渡河到猎杀防空伞", en: "Sinai · Seam Crossing to SAM Hunt" },
+    cta: { zh: "观看瞪羚行动合成破局 →", en: "Watch Operation Gazelle →" },
+    deck: {
+      zh: "同一视角看清：以军如何诱敌脱离防空伞、穿插大苦湖两军缝隙，再以地面突击拔除萨姆导弹替空军开路。",
+      en: "Watch in a locked frame how IDF crushed exposed armor, bridged the Bitter Lake seam, and tore open the SAM belt from the ground."
+    }
   }
 };
 
@@ -48,6 +63,8 @@ export const GUIDED_TOURS = {
 const CHISHUI_COMPARE_CAM = { pitch: 39, yaw: -7, zoom: 0.96, panX: 78, panY: -8 };
 // 诺曼底海岸线五滩同视角对照镜头
 const NORMANDY_COAST_CAM = { pitch: 36, yaw: -6, zoom: 1.06, panX: -8, panY: 16 };
+// 苏伊士运河与大苦湖接合部锁定对照镜头
+const SINAI_CANAL_CAM = { pitch: 38, yaw: -6, zoom: 1.02, panX: 34, panY: -12 };
 const GUIZHOU_HISTORY = "https://www.ccphistory.org.cn/shds/shhm/content/13b1cdbd-0432-4ed9-8f15-7082ed2ea754.html";
 
 // 事件级扩展元数据：镜头编排、前后位置对照、史料依据与地图精度标注
@@ -209,6 +226,52 @@ export const EVENT_META = {
     precision: { zh: "史实地点：水门桥（黄草岭咽喉） · 路线为沿盘山公路态势示意", en: "Verified site: Funchilin Bridge · Schematic mountain highway track" },
     sources: [
       { title: { zh: "中国人民志愿军战史公开档案", en: "PVA Historical Archives" }, note: { zh: "志愿军第20军突击队于12月1—6日三次炸毁绝壁咽喉水门桥；美军随后空投M2钢桥组件架通。", en: "PVA sappers demolished Funchilin Bridge three times (Dec 1–6) before US transports airdropped M2 spans." }, url: "https://www.jb.mil.cn/" }
+    ]
+  },
+
+  /* ==================== 西奈半岛反击战 · 现代诸兵种合成作战样板 ==================== */
+  "sinai-1973:badr-crossing:2": {
+    precision: { zh: "史实地点：菲尔丹桥东侧（1973.10.08） · 路线为战役示意 · 3D地形程序模拟", en: "Verified site: East of Firdan Bridge (Oct 8, 1973) · Schematic tracks · Procedural 3D terrain" },
+    sources: [
+      { title: { zh: "US Army CSI: Leavenworth Paper No. 21 (Gawrych)", en: "US Army CSI: Leavenworth Paper No. 21 (Gawrych)" }, note: { zh: "10月8日阿丹师第190装甲旅在缺乏步兵与炮火压制下直扑埃军第2步兵师防线，遭萨格尔反坦克导弹伏击覆灭。", en: "On Oct 8, Adan's unsupported 190th Armored Brigade charged into Egyptian 2nd Div Sagger ATGM ambushes at Firdan and was shattered." }, url: "https://www.armyupress.army.mil/Portals/7/combat-studies-institute/csi-books/leavenworth-papers-21-the-1973-arab-israeli-war.pdf" }
+    ]
+  },
+  "sinai-1973:sinai-armor-clash:3": {
+    camera: SINAI_CANAL_CAM,
+    compareLabel: { zh: "同视角对照 · ① 埃军脱离防空伞东进受创，德维苏瓦露出缝隙", en: "Locked Frame · 1. Egyptian Armor Mauled Beyond SAMs; Seam Exposed" },
+    precision: { zh: "史实节点：10月14日西奈坦克决战与德维苏瓦接合部 · 虚线弧为防空伞示意", en: "Verified event: Oct 14 Sinai tank clash & Deversoir seam · Dashed arc marks SAM umbrella" },
+    sources: [
+      { title: { zh: "Britannica & US Army CSI: October 14 Tank Battle", en: "Britannica & US Army CSI: October 14 Tank Battle" }, note: { zh: "埃军第21、第4装甲师奉命越出萨姆防空网东攻山口，单日损失约250辆坦克，中路接合部彻底暴露。", en: "Advancing east outside their SAM shield on Oct 14 cost Egypt ~250 tanks and exposed the 2nd–3rd Army boundary." }, url: "https://www.britannica.com/event/Yom-Kippur-War" }
+    ]
+  },
+  "sinai-1973:chinese-farm-crossing:2": {
+    camera: SINAI_CANAL_CAM,
+    compareUnits: ["idf-143", "idf-162"],
+    compareLabel: { zh: "同视角对照 · ② 步坦炮工打通中国农场，滚轴浮桥横跨运河", en: "Locked Frame · 2. Combined Arms Clear Chinese Farm & Bridge Canal" },
+    precision: { zh: "史实渡口：德维苏瓦与中国农场（10月15—17日） · 路线为合成穿插示意", en: "Verified sites: Deversoir & Chinese Farm (Oct 15–17) · Schematic combined-arms corridor" },
+    sources: [
+      { title: { zh: "Avraham Adan《On the Banks of the Suez》& US Army CSI", en: "Avraham Adan, On the Banks of the Suez & US Army CSI" }, note: { zh: "经两昼夜步坦炮工协同激战肃清中国农场反坦阵地后，以军工兵于10月17日架通浮筒桥与180吨滚轴桥。", en: "After 48 hours of combined artillery-paratroop-armor combat at Chinese Farm, engineers bridged Deversoir on Oct 17." }, url: "https://www.armyupress.army.mil/Portals/7/combat-studies-institute/csi-books/leavenworth-papers-21-the-1973-arab-israeli-war.pdf" }
+    ]
+  },
+  "sinai-1973:west-bank-encirclement:0": {
+    camera: SINAI_CANAL_CAM,
+    compareUnits: [
+      "idf-143",
+      { from: [396, 344], to: [332, 446], side: "red" }
+    ],
+    compareLabel: { zh: "同视角对照 · ③ 地面突击群碾碎西岸萨姆阵地，替空军撕开天空！", en: "Locked Frame · 3. Ground Raids Smash West-Bank SAMs to Unleash Airpower!" },
+    precision: { zh: "史实战术：法伊德—吉奈法防空网猎杀（10月18—20日） · 陆替空开路典范", en: "Verified tactic: Fayid–Geneifa SAM raids (Oct 18–20) · Ground forces reopen the sky" },
+    sources: [
+      { title: { zh: "US Army CSI: Operation Gazelle Exploitation", en: "US Army CSI: Operation Gazelle Exploitation" }, note: { zh: "过河装甲特遣队直接摧毁西岸数十处萨姆导弹连，使以色列空军得以重返战场协同南下合围。", en: "Armored raids destroyed dozens of west-bank SAM sites from the ground, restoring IAF air superiority." }, url: "https://www.armyupress.army.mil/Portals/7/combat-studies-institute/csi-books/leavenworth-papers-21-the-1973-arab-israeli-war.pdf" }
+    ]
+  },
+  "sinai-1973:west-bank-encirclement:3": {
+    camera: { pitch: 38, yaw: -4, zoom: 0.98, panX: 44, panY: -54 },
+    compareUnits: ["idf-162", "idf-252"],
+    compareLabel: { zh: "同视角对照 · ④ 南卷阿达比亚港切断开罗公路，合围埃第3军团", en: "Locked Frame · 4. Drive to Adabiya Cuts Cairo Road & Traps 3rd Army" },
+    precision: { zh: "史实终点：阿达比亚港与开罗公路101公里处（10月23—24日）", en: "Verified endpoints: Adabiya Port & Km 101 on Cairo–Suez Road (Oct 23–24)" },
+    sources: [
+      { title: { zh: "Britannica: Ceasefire at Kilometer 101", en: "Britannica: Ceasefire at Kilometer 101" }, note: { zh: "阿丹第162师进占阿达比亚港，将东岸埃及第3军团约3万官兵完全切断合围，促成联合国停火。", en: "Adan's 162nd Div seized Adabiya on the Gulf of Suez, completely isolating ~30,000 troops of Egypt's 3rd Army." }, url: "https://www.britannica.com/event/Yom-Kippur-War" }
     ]
   }
 };

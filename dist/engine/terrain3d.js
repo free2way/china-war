@@ -121,6 +121,8 @@ export function getBattleEnvLabel(battleId, lang = "zh") {
         return "English Channel · Normandy Bluffs & Bocage";
       case "market-garden-1944":
         return "Dutch Lowlands · Rhine & Waal Corridor";
+      case "sinai-1973":
+        return "Suez Canal & Bitter Lakes · Sinai Desert Passes";
       default:
         return "3D Relief Sandtable · Tactical Simulation";
     }
@@ -136,6 +138,8 @@ export function getBattleEnvLabel(battleId, lang = "zh") {
       return "英吉利海峡 · 诺曼底悬崖与灌木丘陵";
     case "market-garden-1944":
       return "荷兰低地河网 · 莱茵河与瓦尔河走廊";
+    case "sinai-1973":
+      return "苏伊士运河与大苦湖 · 西奈荒漠与山口棱线";
     default:
       return "三维高程地形沙盘 · 实时态势推演";
   }
@@ -506,6 +510,85 @@ function getTerrainProfile(battleId) {
           const water = smoothstep(13, 5, dRiver);
           if (water > 0.25) h = Math.min(h, 0.04);
           return { h: Math.max(0.02, Math.min(0.85, h)), water, road: smoothstep(8, 3, dHwy) * (1 - water) };
+        }
+      };
+
+    case "sinai-1973":
+      return {
+        seed: 1973,
+        heightScale: 0.34,
+        contourStep: 13.0,
+        snowLevel: 9.0,
+        weather: "none",
+        fogColor: [0.11, 0.09, 0.06],
+        palette: {
+          low: [0.38, 0.31, 0.21],
+          mid: [0.58, 0.46, 0.30],
+          high: [0.73, 0.59, 0.39],
+          peak: [0.85, 0.74, 0.55],
+          rock: [0.46, 0.36, 0.25],
+          road: [0.88, 0.76, 0.48],
+          water: [0.11, 0.46, 0.56],
+          waterDeep: [0.05, 0.25, 0.38],
+          skirtTop: [0.33, 0.26, 0.18],
+          skirtBottom: [0.10, 0.08, 0.06]
+        },
+        sample(x, y) {
+          const nx = x / MAP_W;
+          const ny = y / MAP_H;
+          // 北部地中海海岸与南部苏伊士湾
+          const medY = 58 + Math.sin(nx * 4.2) * 12 + (nx > 0.55 ? (nx - 0.55) * 48 : 0);
+          if (y < medY - 10) return { h: 0.015, water: 1.0, road: 0 };
+          const medWater = 1 - smoothstep(medY - 8, medY + 12, y);
+
+          const inGulf = y > 598 && x > 380 - (y - 598) * 0.05 && x < 448 + (y - 598) * 0.52;
+          const dGulfEdge = Math.min(
+            Math.abs(x - (380 - Math.max(0, y - 598) * 0.05)),
+            Math.abs(x - (448 + Math.max(0, y - 598) * 0.52))
+          );
+          const gulfWater = inGulf ? smoothstep(0, 14, y - 598) * smoothstep(0, 12, dGulfEdge) : 0;
+
+          // 苏伊士运河与提姆萨赫湖、大苦湖、小苦湖
+          const dCanal = distToPolyline(x, y, [
+            [388, 56],
+            [394, 162],
+            [396, 228],
+            [392, 292],
+            [396, 344],
+            [405, 398],
+            [416, 474],
+            [422, 604]
+          ]);
+          const timsah = Math.hypot((x - 391) / 15, (y - 292) / 13);
+          const greatBitter = Math.hypot((x - 405) / 26, (y - 396) / 49);
+          const littleBitter = Math.hypot((x - 416) / 13, (y - 474) / 16);
+          const lakeDist = Math.min(timsah, greatBitter, littleBitter);
+          const canalWater = Math.max(smoothstep(10.5, 4.2, dCanal), smoothstep(1.08, 0.78, lakeDist));
+
+          // 地形起伏：西岸尼罗河三角洲边缘平缓，东岸西奈沙丘与吉迪/米特拉山脊高耸
+          const eastBias = smoothstep(400, 560, x);
+          let h = 0.14 + fbm(nx * 6.2, ny * 5.6, 1973, 3) * (0.14 + eastBias * 0.18);
+          h += erodedMountain(nx * 4.8, ny * 4.4, 1973, 4) * eastBias * 0.34;
+          // 吉迪与米特拉南北山体 + 两条东西向山口走廊切谷
+          h += gauss(Math.hypot((x - 632) * 0.85, y - 395), 58) * 0.34;
+          h += gauss(Math.hypot((x - 636) * 0.85, y - 482), 48) * 0.36;
+          h += gauss(Math.hypot((x - 644) * 0.85, y - 574), 56) * 0.32;
+          // 吉奈法西岸高地
+          h += gauss(Math.hypot(x - 324, y - 486), 44) * 0.18;
+          // 吉迪山口（y≈438）与米特拉山口（y≈526）切开峡谷通道
+          const dGidi = distToPolyline(x, y, [[520, 444], [618, 438], [725, 432]]);
+          const dMitla = distToPolyline(x, y, [[520, 520], [628, 526], [735, 532]]);
+          const dTasaRoad = distToPolyline(x, y, [[396, 344], [548, 286], [686, 326]]);
+          const dCairoRoad = distToPolyline(x, y, [[110, 502], [212, 566], [420, 592]]);
+          h *= 1 - gauss(Math.min(dGidi, dMitla), 15) * 0.42;
+
+          const water = Math.max(medWater, gulfWater, canalWater);
+          h *= 1 - smoothstep(0.05, 0.65, water) * 0.88;
+          if (water > 0.35) h = Math.min(h, 0.03);
+
+          const dRoad = Math.min(dGidi, dMitla, dTasaRoad, dCairoRoad);
+          const road = smoothstep(7.5, 2.8, dRoad) * (1 - water);
+          return { h: Math.max(0.02, Math.min(0.96, h)), water: Math.min(1, water), road };
         }
       };
 

@@ -1197,6 +1197,252 @@ export const TURN_SCRIPTS = {
         }
       }
     ]
+  },
+
+  /* =========================================================================
+   * 6. 西奈半岛反击战 · 瞪羚行动（1973）
+   * ========================================================================= */
+  "sinai-1973": {
+    "badr-crossing": [
+      {
+        actor: "blue",
+        focusUnits: ["egy-2army", "egy-3army", "egy-sam"],
+        focusPlaces: ["坎塔拉", "伊斯梅利亚", "苏伊士城"],
+        redSubpaths: [],
+        enemyIndices: [0, 1, 2, 3],
+        markerIndices: [0],
+        sfx: "clash",
+        banner: {
+          zh: { kicker: "1973.10.06 14:00 · 巴德尔行动", title: "水炮破堤 · 横渡苏伊士", sub: "埃军五师强渡运河，高压水炮数小时冲垮巴列夫巨型沙墙" },
+          en: { kicker: "OCT 6, 1973 14:00 · OPERATION BADR", title: "WATER CANNONS BREACH THE CANAL", sub: "Five Egyptian divisions storm across behind hydraulic breaches in the Bar-Lev sand wall" }
+        },
+        narration: {
+          zh: "1973年10月6日下午两点，埃及大军发起“巴德尔行动”，两千门火炮齐射，工兵用高压水炮冲垮巴列夫防线巨型沙堤，五个步兵师迅速横渡苏伊士运河。",
+          en: "At 14:00 on October 6, 1973, Egypt launches Operation Badr: behind two thousand guns, high-pressure water cannons wash open the Bar-Lev sand wall as five divisions storm across the Suez Canal."
+        }
+      },
+      {
+        actor: "blue",
+        focusUnits: ["egy-sam", "egy-2army", "idf-hq"],
+        focusPlaces: ["伊斯梅利亚", "雷菲迪姆基地"],
+        redSubpaths: [0],
+        enemyIndices: [],
+        markerIndices: [],
+        sfx: "fire",
+        narration: {
+          zh: "埃军在运河西岸构筑严密的萨姆二、三、六防空导弹保护伞，以色列空军战机刚一抵近运河便接连被击落，彻底丧失近距空中支援能力。",
+          en: "On the west bank, interlocking SAM-2, SAM-3, and mobile SAM-6 batteries lock down the sky, downing Israeli jets on approach and denying close air support."
+        }
+      },
+      {
+        actor: "clash",
+        focusUnits: ["idf-162", "egy-2army"],
+        focusPlaces: ["菲尔丹桥", "塔萨"],
+        redSubpaths: [1],
+        enemyIndices: [],
+        markerIndices: [1],
+        sfx: "fire",
+        banner: {
+          zh: { kicker: "1973.10.08 · 菲尔丹之败", title: "纯坦莽冲 · 撞碎导弹火网", sub: "无步炮协同的第190装甲旅遭萨格尔导弹伏击，十余分钟覆灭" },
+          en: { kicker: "OCT 8, 1973 · FIRDAN DISASTER", title: "PURE-TANK CHARGE SHATTERED", sub: "Charging without infantry or artillery smoke, IDF 190th Brigade is ambushed by Sagger ATGMs" }
+        },
+        narration: {
+          zh: "10月8日，迷信全坦克制胜论的以军第190装甲旅在没有步兵清剿、没有炮火烟幕掩护下直冲菲尔丹桥，一头撞进埃军萨格尔反坦克导弹伏击圈，十余分钟主力覆灭。",
+          en: "On October 8, overconfident in pure-tank doctrine, the unsupported 190th Armored Brigade charges toward Firdan—straight into dense Sagger anti-tank missiles, losing over eighty tanks in minutes."
+        }
+      },
+      {
+        actor: "red",
+        focusUnits: ["idf-hq", "idf-143", "idf-252"],
+        focusPlaces: ["塔萨", "雷菲迪姆基地"],
+        redSubpaths: [2],
+        enemyIndices: [],
+        markerIndices: [],
+        sfx: "march",
+        narration: {
+          zh: "惨痛教训迫使以军统帅部紧急叫停盲目反扑，依托西奈沙脊转入弹性防御，连夜将坦克与机械化步兵、自行火炮重新编组为合成战斗群。",
+          en: "Stunned by the losses, IDF Southern Command halts solo tank charges, stabilizes along the Sinai ridges, and urgently pairs armor with mechanized infantry and howitzers."
+        }
+      }
+    ],
+    "sinai-armor-clash": [
+      {
+        actor: "red",
+        focusUnits: ["idf-hq", "idf-252", "idf-143"],
+        focusPlaces: ["吉迪山口", "米特拉山口", "塔萨"],
+        redSubpaths: [2, 3],
+        enemyIndices: [],
+        markerIndices: [],
+        sfx: "march",
+        narration: {
+          zh: "10月10日至12日，以军扼守吉迪与米特拉山口前沿，美军战略空运的陶式反坦克导弹与补充弹药陆续运抵西奈前线。",
+          en: "From October 10 to 12, IDF divisions dig into hull-down positions before Gidi and Mitla Passes as airlifted TOW anti-tank missiles reach the front."
+        }
+      },
+      {
+        actor: "red",
+        focusUnits: ["idf-hq", "idf-143", "egy-2army", "egy-3army"],
+        focusPlaces: ["德维苏瓦", "大苦湖"],
+        redSubpaths: [1],
+        enemyIndices: [],
+        markerIndices: [1],
+        sfx: "march",
+        narration: {
+          zh: "10月13日，高空战略侦察拍回关键照片：大苦湖北端德维苏瓦恰处埃及第二与第三军团接合部，正是穿插渡河的绝佳缝隙。",
+          en: "On October 13, high-altitude reconnaissance reveals the decisive opening: Deversoir, at the north tip of Great Bitter Lake, sits squarely on the thinly guarded seam between Egypt's Second and Third Armies."
+        }
+      },
+      {
+        actor: "blue",
+        focusUnits: ["egy-21ar", "egy-4ar", "egy-sam"],
+        focusPlaces: ["塔萨", "吉迪山口", "米特拉山口"],
+        redSubpaths: [],
+        enemyIndices: [0, 1, 2, 3],
+        markerIndices: [],
+        sfx: "march",
+        narration: {
+          zh: "10月14日清晨，为策应叙利亚战线，埃及第21与第4装甲师奉命向东全线出击，主动走出了西岸萨姆防空导弹伞的有效保护半径！",
+          en: "At dawn on October 14, ordered east to relieve pressure on Syria, Egypt's 21st and 4th Armored Divisions roll out beyond the protective reach of their west-bank SAM umbrella!"
+        }
+      },
+      {
+        actor: "clash",
+        focusUnits: ["idf-143", "idf-162", "idf-252", "egy-21ar", "egy-4ar"],
+        focusPlaces: ["塔萨", "米特拉山口", "德维苏瓦"],
+        redSubpaths: [0],
+        enemyIndices: [],
+        markerIndices: [0],
+        sfx: "clash",
+        banner: {
+          zh: { kicker: "1973.10.14 · 西奈坦克大决战", title: "诱敌出伞 · 单日摧毁二百五十坦", sub: "二战库尔斯克以来最大装甲交锋，西奈战役主动权彻底翻转" },
+          en: { kicker: "OCT 14, 1973 · GREAT SINAI TANK BATTLE", title: "EXPOSED ARMOR CRUSHED BEYOND SAMS", sub: "Largest tank battle since Kursk destroys ~250 Egyptian tanks and flips campaign momentum" }
+        },
+        narration: {
+          zh: "库尔斯克以来最大规模坦克战爆发！失去防空伞庇护的埃军装甲群遭到以军棱线隐蔽坦克炮、反坦导弹与攻击机立体围猎，单日折损约两百五十辆坦克，战役主动权彻底逆转。",
+          en: "In the largest tank battle since Kursk, exposed Egyptian armor is caught between hull-down Israeli gunnery, TOW missiles, and swooping attack jets—losing some two hundred fifty tanks in a single day."
+        }
+      }
+    ],
+    "chinese-farm-crossing": [
+      {
+        actor: "red",
+        focusUnits: ["idf-143", "idf-para"],
+        focusPlaces: ["塔萨", "德维苏瓦", "大苦湖"],
+        redSegment: [0, 0.58],
+        enemyIndices: [],
+        markerIndices: [],
+        sfx: "march",
+        narration: {
+          zh: "10月15日夜，“瞪羚行动”打响！沙龙第143师正面佯攻伊斯梅利亚方向，丹尼·马特率第247伞兵旅悄然穿插至德维苏瓦，乘橡皮艇渡过苏伊士运河。",
+          en: "On the night of October 15, Operation Gazelle begins: while Sharon fixes Tasa, Danny Matt's 247th Paratroop Brigade slips along Great Bitter Lake to paddle across Deversoir in rubber dinghies."
+        }
+      },
+      {
+        actor: "clash",
+        focusUnits: ["idf-para", "idf-143", "egy-16inf"],
+        focusPlaces: ["中国农场", "德维苏瓦"],
+        redSegment: [0.35, 0.72],
+        enemyIndices: [0, 1],
+        markerIndices: [0],
+        sfx: "fire",
+        narration: {
+          zh: "渡口东岸走廊在“中国农场”遭埃军第16师锁死！以军不再单靠坦克硬冲，而是集中重炮烟幕致盲反坦射手，投入伞兵与机步贴身清剿战壕。",
+          en: "When Egyptian 16th Division anti-tank nests choke the corridor at Chinese Farm, IDF fights with true combined arms—blinding gunners with howitzer smoke while paratroopers clear trenches yard by yard."
+        }
+      },
+      {
+        actor: "red",
+        focusUnits: ["idf-162", "idf-143", "idf-para"],
+        focusPlaces: ["德维苏瓦", "中国农场"],
+        redSegment: [0.68, 1.0],
+        enemyIndices: [2],
+        markerIndices: [1],
+        sfx: "march",
+        banner: {
+          zh: { kicker: "1973.10.17 · 穿隙架桥", title: "步坦炮工 · 浮桥横跨苏伊士", sub: "炮火中架通浮筒桥与180吨滚轴桥，装甲主力突入运河西岸" },
+          en: { kicker: "OCT 17, 1973 · BRIDGING DEVERSOIR", title: "ROLLER BRIDGE SPANS THE SUEZ", sub: "Combined infantry, artillery, engineers & armor open two bridges onto the West Bank" }
+        },
+        narration: {
+          zh: "10月17日，在步、坦、炮严密掩护下，以军工兵冒着炮火将浮筒桥与一百八十吨巨型滚轴桥拖入运河架通，钢铁洪流开始源源不断涌入西岸！",
+          en: "On October 17, shielded by infantry, tanks, and artillery barrages, combat engineers float both pontoon and 180-ton roller bridges across Deversoir, opening the gateway to the West Bank!"
+        }
+      },
+      {
+        actor: "clash",
+        focusUnits: ["idf-162", "idf-252", "egy-25bde"],
+        focusPlaces: ["大苦湖", "德维苏瓦"],
+        redSegment: [0.75, 1.0],
+        enemyIndices: [],
+        markerIndices: [],
+        sfx: "clash",
+        narration: {
+          zh: "阿丹第162师与马根第252师在大苦湖畔设伏，一举歼灭北上增援的埃军第25独立T-62装甲旅，随即全师越过浮桥杀向运河西岸。",
+          en: "Along Great Bitter Lake, Adan's 162nd Division ambushes and annihilates Egypt's relieving 25th T-62 Armored Brigade, then thunders across the bridges onto the African shore."
+        }
+      }
+    ],
+    "west-bank-encirclement": [
+      {
+        actor: "red",
+        focusUnits: ["idf-162", "idf-143", "idf-iaf"],
+        focusPlaces: ["法伊德", "吉奈法高地", "伊斯梅利亚"],
+        redSubpaths: [0, 2],
+        enemyIndices: [0],
+        markerIndices: [0],
+        sfx: "fire",
+        banner: {
+          zh: { kicker: "1973.10.18—20 · 逆向陆空赋能", title: "陆军猎导 · 替空军撕开天空", sub: "地面装甲突击群直接捣毁西岸萨姆导弹阵地，撬垮防空铁幕" },
+          en: { kicker: "OCT 18–20, 1973 · REVERSE ENABLEMENT", title: "GROUND RAIDS SMASH THE SAM UMBRELLA", sub: "Armored task forces overrun west-bank missile sites to reopen the sky for airpower" }
+        },
+        narration: {
+          zh: "过河后的以军打出颠覆传统的现代合成神来之笔——陆军替空军开路！阿丹与沙龙师分头突袭法伊德和吉奈法高地，从地面直接碾碎数十座萨姆防空导弹阵地。",
+          en: "Across the canal, IDF executes a revolutionary combined-arms stroke—the Army opens the sky for the Air Force! Armored task forces storm Fayid and Geneifa, smashing dozens of SAM batteries from the ground."
+        }
+      },
+      {
+        actor: "clash",
+        focusUnits: ["idf-iaf", "idf-162", "idf-252"],
+        focusPlaces: ["法伊德", "吉奈法高地"],
+        redSubpaths: [],
+        enemyIndices: [1],
+        markerIndices: [],
+        sfx: "clash",
+        narration: {
+          zh: "西岸防空天网被撕开巨大豁口，以色列空军战机立即呼啸涌入，在空中击溃拦截敌机，与地面合成装甲群形成无解的陆空闭环猎杀。",
+          en: "Pouring through the torn SAM corridor, Israeli Mirages and Phantoms reclaim air supremacy overhead, forging a lethal air–ground loop with the advancing tank divisions."
+        }
+      },
+      {
+        actor: "red",
+        focusUnits: ["idf-162", "idf-252", "egy-cairo"],
+        focusPlaces: ["苏伊士城", "101公里处"],
+        redSubpaths: [1],
+        enemyIndices: [],
+        markerIndices: [],
+        sfx: "march",
+        narration: {
+          zh: "在空军贴身护航与马根第252师侧翼掩护下，阿丹第162师向南高速席卷，一举截断开罗通往苏伊士城的战略主干公路。",
+          en: "With Magen's 252nd Division guarding the western flank and IAF jets striking ahead, Adan's 162nd Division sweeps south to sever the main Cairo–Suez highway."
+        }
+      },
+      {
+        actor: "red",
+        focusUnits: ["idf-162", "idf-252", "egy-3army"],
+        focusPlaces: ["阿达比亚港", "苏伊士城", "101公里处"],
+        redSubpaths: [0, 1],
+        enemyIndices: [],
+        markerIndices: [1],
+        sfx: "victory",
+        banner: {
+          zh: { kicker: "1973.10.23—24 · 战略大合围", title: "封锁阿达比亚 · 合围第三军团", sub: "进抵开罗公路101公里处，东岸三万埃军陷入绝境促成停火" },
+          en: { kicker: "OCT 23–24, 1973 · ENCIRCLEMENT COMPLETE", title: "ADABIYA SEIZED · 3RD ARMY TRAPPED", sub: "Reaching Suez Bay and Km 101 toward Cairo seals 30,000 troops in the east-bank pocket" }
+        },
+        narration: {
+          zh: "10月23日至24日，阿丹师夺占苏伊士湾阿达比亚港，将东岸约三万名埃及第三军团官兵彻底合围，先头直抵距开罗仅101公里处，最终促成全面停火，铸就现代合成战争的里程碑。",
+          en: "Capturing Adabiya Port on the Gulf of Suez, IDF completely encircles thirty thousand troops of Egypt's Third Army and halts at Kilometer 101—cementing a watershed triumph of modern combined-arms warfare."
+        }
+      }
+    ]
   }
 };
 

@@ -151,6 +151,35 @@ export const battleRegistry = [
     enLoader: () => import("./en/market-garden-1944.js?v=2")
   },
   {
+    id: "sinai-1973",
+    name: "西奈半岛反击战",
+    codename: "OPERATION GAZELLE",
+    period: "1973",
+    periodLabel: "1973.10.06—24",
+    era: "第四次中东战争 · 现代合成战",
+    region: "world",
+    regionLabel: "世界战史",
+    category: "modern",
+    theater: "苏伊士运河 · 西奈半岛",
+    opponents: "以色列国防军 VS 埃及武装部队",
+    summary: "从纯坦克冲锋折戟导弹网，到步坦炮工穿隙架桥、地面猎杀防空伞替空军开路，重塑现代合成作战范式。",
+    seal: "奈",
+    accent: "#d67a2e",
+    status: "available",
+    en: {
+      name: "Sinai Counteroffensive",
+      periodLabel: "Oct 6–24, 1973",
+      era: "Yom Kippur War · Combined Arms",
+      regionLabel: "World History",
+      theater: "Suez Canal · Sinai Peninsula",
+      opponents: "Israel Defense Forces vs. Egyptian Army",
+      summary: "From pure-tank disaster against Sagger missiles to combined-arms bridging at Chinese Farm and ground raids tearing open the SAM dome.",
+      seal: "SN"
+    },
+    loader: () => import("./sinai-1973.js?v=1"),
+    enLoader: () => import("./en/sinai-1973.js?v=1")
+  },
+  {
     id: "stalingrad-1942",
     name: "斯大林格勒战役",
     codename: "STALINGRAD · 1942",

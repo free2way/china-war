@@ -101,6 +101,26 @@ export const THEME_PRESETS = {
     ink: "#191c18",
     muted: "#5f645b",
     closingBg: "#2e1b18"
+  },
+  "sinai-desert-ochre": {
+    id: "sinai-desert-ochre",
+    accent: "#d67a2e",
+    accentBright: "#f49b46",
+    accentDark: "#964d16",
+    accentSoft: "rgba(214, 122, 46, 0.18)",
+    opposing: "#5ca0b5",
+    opposingSoft: "rgba(92, 160, 181, 0.22)",
+    gold: "#e0b354",
+    riverKey: "rgba(62, 158, 184, 0.86)",
+    stageBg: "#14110d",
+    stageBgAlt: "#211b14",
+    stageGlow: "rgba(214, 138, 62, 0.15)",
+    paper: "#ede5d5",
+    paperLight: "#f6f1e6",
+    paperMuted: "#dfd3bc",
+    ink: "#1c1813",
+    muted: "#6b6254",
+    closingBg: "#2e1d10"
   }
 };
 

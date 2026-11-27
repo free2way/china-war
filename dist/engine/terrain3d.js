@@ -257,23 +257,23 @@ function getTerrainProfile(battleId) {
     case "guandu-200":
       return {
         seed: 200,
-        heightScale: 0.34,
+        heightScale: 0.36,
         contourStep: 12.0,
         snowLevel: 9.0,
         weather: "none",
-        fogColor: [0.09, 0.07, 0.05],
+        fogColor: [0.09, 0.08, 0.06],
         palette: {
-          // 汉末黄土与中原冲积平原卫星浮雕色阶
-          low: [0.18, 0.16, 0.11],
-          mid: [0.31, 0.27, 0.18],
-          high: [0.49, 0.41, 0.27],
-          peak: [0.71, 0.60, 0.42],
-          rock: [0.42, 0.36, 0.28],
-          road: [0.78, 0.67, 0.45],
-          water: [0.64, 0.50, 0.25], // 黄河浊金水色
-          waterDeep: [0.22, 0.38, 0.42], // 鸿沟青碧运河
-          skirtTop: [0.36, 0.28, 0.17],
-          skirtBottom: [0.08, 0.06, 0.04]
+          // 中原沃野林带与太行/嵩山黄土岩层自然地貌色阶
+          low: [0.17, 0.24, 0.13],
+          mid: [0.30, 0.36, 0.19],
+          high: [0.48, 0.42, 0.26],
+          peak: [0.66, 0.58, 0.43],
+          rock: [0.43, 0.37, 0.29],
+          road: [0.82, 0.70, 0.46],
+          water: [0.68, 0.52, 0.26], // 黄河浊金泥沙水色
+          waterDeep: [0.22, 0.40, 0.46], // 官渡水/鸿沟苍碧运河
+          skirtTop: [0.28, 0.23, 0.16],
+          skirtBottom: [0.07, 0.06, 0.05]
         },
         sample(x, y) {
           const nx = x / MAP_W;
@@ -287,7 +287,7 @@ function getTerrainProfile(battleId) {
             [158, 185],
             [125, 240]
           ]);
-          h += gauss(taihang, 120) * 0.76 * (0.55 + 0.55 * erodedMountain(nx * 6.2, ny * 5.8, 202, 4));
+          h += gauss(taihang, 120) * 0.78 * (0.55 + 0.55 * erodedMountain(nx * 6.2, ny * 5.8, 202, 4));
 
           // 西南嵩山/伏牛余脉
           const songshan = distToPolyline(x, y, [
@@ -295,7 +295,7 @@ function getTerrainProfile(battleId) {
             [125, 610],
             [205, 685]
           ]);
-          h += gauss(songshan, 108) * 0.52 * (0.6 + 0.45 * erodedMountain(nx * 5.2, ny * 5.2, 205, 3));
+          h += gauss(songshan, 108) * 0.54 * (0.6 + 0.45 * erodedMountain(nx * 5.2, ny * 5.2, 205, 3));
 
           // 官渡沙丘高岗（袁绍依沙堆连营数十里）
           h += gauss(Math.hypot(x - 408, y - 412), 46) * 0.12;
@@ -313,7 +313,7 @@ function getTerrainProfile(battleId) {
             [650, 226],
             [845, 178]
           ]);
-          h *= 1 - gauss(dYellow, 34) * 0.72;
+          h *= 1 - gauss(dYellow, 38) * 0.78;
 
           // 鸿沟/官渡水
           const dCanal = distToPolyline(x, y, [
@@ -324,10 +324,10 @@ function getTerrainProfile(battleId) {
             [620, 628],
             [830, 660]
           ]);
-          h *= 1 - gauss(dCanal, 20) * 0.54;
+          h *= 1 - gauss(dCanal, 24) * 0.62;
 
-          // 中原驿道（邺城—黎阳—延津—阳武—官渡—许都）
-          const dRoad = distToPolyline(x, y, [
+          // 中原驿道（邺城—黎阳—延津—阳武—官渡—许都 & 官渡—乌巢）
+          const dRoad1 = distToPolyline(x, y, [
             [250, 110],
             [440, 175],
             [352, 262],
@@ -335,14 +335,15 @@ function getTerrainProfile(battleId) {
             [372, 466],
             [350, 630]
           ]);
-          const road = smoothstep(7.5, 2.5, dRoad);
+          const dRoad2 = distToPolyline(x, y, [[372, 466], [445, 438], [505, 420]]);
+          const road = Math.max(smoothstep(8.0, 2.8, dRoad1), smoothstep(7.0, 2.4, dRoad2));
 
           const water = Math.max(
-            smoothstep(18, 7, dYellow),
-            smoothstep(10, 4, dCanal) * 0.85,
-            smoothstep(24, 10, dWuchaoMarsh) * 0.55
+            smoothstep(23, 8.5, dYellow),
+            smoothstep(13, 5.0, dCanal) * 0.90,
+            smoothstep(26, 10, dWuchaoMarsh) * 0.62
           );
-          if (water > 0.2) h = Math.min(h, 0.04 + (1 - water) * 0.05);
+          if (water > 0.16) h = Math.min(h, 0.036 + (1 - water) * 0.045);
           return { h: Math.max(0.02, Math.min(1.0, h)), water, road: road * (1 - water) };
         }
       };
@@ -457,73 +458,127 @@ function getTerrainProfile(battleId) {
     case "normandy-1944":
       return {
         seed: 1944,
-        heightScale: 0.30,
+        heightScale: 0.32,
         contourStep: 12.0,
         snowLevel: 9.0,
         weather: "none",
-        fogColor: [0.06, 0.10, 0.13],
+        fogColor: [0.06, 0.10, 0.12],
         palette: {
-          low: [0.14, 0.24, 0.17],
-          mid: [0.24, 0.35, 0.23],
-          high: [0.40, 0.46, 0.32],
-          peak: [0.58, 0.60, 0.46],
-          rock: [0.44, 0.43, 0.38],
-          road: [0.74, 0.68, 0.54],
-          water: [0.13, 0.33, 0.46],
-          waterDeep: [0.07, 0.20, 0.32],
-          skirtTop: [0.22, 0.30, 0.34],
-          skirtBottom: [0.05, 0.09, 0.13]
+          low: [0.15, 0.27, 0.14],
+          mid: [0.25, 0.39, 0.18],
+          high: [0.40, 0.47, 0.25],
+          peak: [0.58, 0.56, 0.44],
+          rock: [0.60, 0.57, 0.49], // 诺曼底海岸白垩石灰岩悬崖
+          road: [0.82, 0.70, 0.48],
+          water: [0.22, 0.47, 0.56],
+          waterDeep: [0.08, 0.22, 0.35],
+          skirtTop: [0.22, 0.25, 0.22],
+          skirtBottom: [0.06, 0.08, 0.09]
         },
         sample(x, y) {
           const nx = x / MAP_W;
           const ny = y / MAP_H;
-          const coastY = 230 + Math.sin(nx * 5.2) * 38 + (nx < 0.28 ? -60 * (0.28 - nx) : 0);
-          const landMask = smoothstep(coastY - 22, coastY + 26, y);
+
+          // 北岸英格兰南海岸（朴次茅斯启航港 460,74）
+          const engCoastY = 92 + Math.sin(nx * 7.5) * 7;
+          const engLand = 1 - smoothstep(engCoastY - 12, engCoastY + 12, y);
+
+          // 南岸法国诺曼底海岸与科唐坦半岛（精准贴合瑟堡、犹他、奥马哈、金、朱诺、宝剑五滩）
+          let frCoastY;
+          if (x < 108) {
+            frCoastY = 442 - (x / 108) * 24;
+          } else if (x < 262) {
+            // 科唐坦半岛向北突出至瑟堡(178,232)
+            const t = (x - 184) / 78;
+            frCoastY = 222 + t * t * 118;
+          } else if (x < 425) {
+            // 犹他海滩(278,342) -> 奥马哈海滩(392,368)
+            frCoastY = 340 + smoothstep(262, 365, x) * 28;
+          } else {
+            // 金滩(496,358) -> 朱诺(568,352) -> 宝剑(638,352) -> 勒阿弗尔方向
+            frCoastY = 368 - smoothstep(425, 535, x) * 16 - smoothstep(680, 860, x) * 34;
+          }
+
+          const frLand = smoothstep(frCoastY - 14, frCoastY + 16, y);
+          const landMask = Math.max(engLand, frLand);
           if (landMask < 0.02) return { h: 0.015, water: 1.0, road: 0 };
-          let h = 0.16 + smoothstep(coastY, coastY + 120, y) * 0.22;
-          h += erodedMountain(nx * 4.6, ny * 4.2, 1944, 3) * 0.30;
-          h += gauss(Math.abs(y - (coastY + 26)), 20) * 0.16;
+
+          let h = 0.15 + smoothstep(frCoastY, frCoastY + 170, y) * 0.24 + engLand * 0.16;
+          h += erodedMountain(nx * 4.8, ny * 4.4, 1944, 4) * 0.30;
+          // 奥马哈与奥克角海岸险峻悬崖抬升
+          h += gauss(Math.abs(y - (frCoastY + 18)), 16) * frLand * 0.18;
+
+          // 奥恩河（卡昂—飞马桥入海）与维尔河（圣洛—卡朗唐入海）
+          const dOrne = distToPolyline(x, y, [[638, 352], [664, 408], [622, 472], [616, 555], [650, 625]]);
+          const dVire = distToPolyline(x, y, [[316, 362], [292, 438], [344, 526], [332, 650]]);
+          const dRivers = Math.min(dOrne, dVire);
+          h *= 1 - gauss(dRivers, 20) * 0.58;
           h *= landMask;
-          const water = 1 - smoothstep(coastY - 8, coastY + 14, y);
-          return { h: Math.max(0.015, Math.min(0.95, h)), water, road: 0 };
+
+          // 诺曼底内陆公路网（瑟堡—卡朗唐—巴约—卡昂—法莱斯 & 卡朗唐—圣洛—阿夫朗什）
+          const dRoad1 = distToPolyline(x, y, [[178, 232], [236, 342], [278, 438], [478, 424], [622, 472], [650, 588]]);
+          const dRoad2 = distToPolyline(x, y, [[278, 438], [344, 526], [268, 628]]);
+          const road = Math.max(smoothstep(7.5, 2.6, dRoad1), smoothstep(7.5, 2.6, dRoad2)) * frLand;
+
+          const seaWater = 1 - landMask;
+          const riverWater = smoothstep(11.5, 4.2, dRivers) * frLand * 0.88;
+          const water = Math.max(seaWater, riverWater);
+          if (water > 0.2) h = Math.min(h, 0.028 + (1 - water) * 0.035);
+          return { h: Math.max(0.015, Math.min(0.95, h)), water, road: road * (1 - water) };
         }
       };
 
     case "market-garden-1944":
       return {
         seed: 1945,
-        heightScale: 0.26,
+        heightScale: 0.28,
         contourStep: 11.0,
         snowLevel: 9.0,
         weather: "none",
         fogColor: [0.07, 0.09, 0.08],
         palette: {
-          low: [0.14, 0.22, 0.15],
-          mid: [0.25, 0.34, 0.22],
-          high: [0.40, 0.43, 0.30],
-          peak: [0.56, 0.54, 0.40],
-          rock: [0.36, 0.35, 0.30],
-          road: [0.84, 0.72, 0.42],
-          water: [0.20, 0.39, 0.48],
-          waterDeep: [0.11, 0.26, 0.35],
-          skirtTop: [0.24, 0.26, 0.21],
-          skirtBottom: [0.07, 0.09, 0.08]
+          low: [0.14, 0.26, 0.14],
+          mid: [0.25, 0.38, 0.19],
+          high: [0.39, 0.45, 0.25],
+          peak: [0.55, 0.53, 0.42],
+          rock: [0.38, 0.36, 0.31],
+          road: [0.86, 0.73, 0.45],
+          water: [0.24, 0.46, 0.57],
+          waterDeep: [0.12, 0.27, 0.38],
+          skirtTop: [0.23, 0.24, 0.19],
+          skirtBottom: [0.06, 0.08, 0.07]
         },
         sample(x, y) {
           const nx = x / MAP_W;
           const ny = y / MAP_H;
-          let h = 0.16 + fbm(nx * 5.5, ny * 5.0, 1945, 3) * 0.16;
-          h += gauss(Math.hypot(x - 470, y - 120), 120) * 0.36;
-          h += gauss(Math.hypot(x - 535, y - 275), 72) * 0.24;
-          const dRhine = distToPolyline(x, y, [[80, 165], [350, 180], [500, 168], [800, 190]]);
-          const dWaal = distToPolyline(x, y, [[80, 270], [340, 280], [490, 265], [800, 290]]);
-          const dMaas = distToPolyline(x, y, [[80, 385], [370, 380], [470, 355], [760, 415]]);
-          const dRiver = Math.min(dRhine, dWaal, dMaas);
-          h *= 1 - gauss(dRiver, 22) * 0.68;
-          const dHwy = distToPolyline(x, y, [[415, 650], [435, 520], [460, 380], [485, 268], [492, 168]]);
-          const water = smoothstep(13, 5, dRiver);
-          if (water > 0.25) h = Math.min(h, 0.04);
-          return { h: Math.max(0.02, Math.min(0.85, h)), water, road: smoothstep(8, 3, dHwy) * (1 - water) };
+          let h = 0.15 + fbm(nx * 5.8, ny * 5.2, 1945, 3) * 0.16;
+          // 阿纳姆北岸高地与奈梅亨东南格罗斯贝克高地
+          h += gauss(Math.hypot(x - 455, y - 118), 96) * 0.36;
+          h += gauss(Math.hypot(x - 575, y - 305), 68) * 0.28;
+          // 精准对齐阿纳姆大桥(526,160)、奈梅亨大桥(508,266)、赫拉弗大桥(476,344)、桑镇运河桥(428,492)
+          const dRhine = distToPolyline(x, y, [[48, 168], [320, 156], [450, 156], [526, 160], [680, 182], [846, 238]]);
+          const dWaal = distToPolyline(x, y, [[48, 282], [350, 264], [508, 266], [712, 222], [846, 238]]);
+          const dMaas = distToPolyline(x, y, [[48, 378], [336, 350], [476, 344], [598, 378], [646, 690]]);
+          const dCanal = distToPolyline(x, y, [[180, 518], [428, 492], [612, 508]]);
+          const dMajorRiver = Math.min(dRhine, dWaal, dMaas);
+          h *= 1 - gauss(dMajorRiver, 28) * 0.74;
+          h *= 1 - gauss(dCanal, 16) * 0.55;
+
+          // 69号“地狱公路”高出低地圩田的路基长堤
+          const dHwy = distToPolyline(x, y, [
+            [390, 640],
+            [412, 550],
+            [428, 492],
+            [448, 426],
+            [476, 344],
+            [508, 266],
+            [510, 214],
+            [526, 160]
+          ]);
+          const water = Math.max(smoothstep(18, 6.5, dMajorRiver), smoothstep(10.5, 4.0, dCanal) * 0.85);
+          h += smoothstep(12, 3, dHwy) * 0.045 * (1 - water);
+          if (water > 0.18) h = Math.min(h, 0.034 + (1 - water) * 0.03);
+          return { h: Math.max(0.02, Math.min(0.88, h)), water, road: smoothstep(8.5, 3.0, dHwy) * (1 - water) };
         }
       };
 
@@ -740,7 +795,7 @@ const TERRAIN_FS = `
   uniform float uTime;
   uniform float uGameMode;
   uniform float uSanguoMode;
-  uniform float uChishuiRelief;
+  uniform float uBattleCode;
   uniform float uShowCombat;
   uniform vec2 uRedUnits[8];
   uniform vec2 uBlueUnits[8];
@@ -788,19 +843,43 @@ const TERRAIN_FS = `
     land = mix(land, uColorPeak, smoothstep(0.66, 0.94, h));
     land = mix(land, uColorRock, smoothstep(0.14, 0.44, slope) * 0.68);
 
-    // 四渡赤水专属山川水系实景地貌（uChishuiRelief：仅借鉴苍翠茂密林山 + 喀斯特深切灰褐陡壁 + 赤水红褐水系与乌江碧水）
-    if (uChishuiRelief > 0.5) {
-      vec3 crValley = vec3(0.13, 0.25, 0.12); // 深谷苍翠苔林
-      vec3 crMid    = vec3(0.24, 0.39, 0.17); // 茂密松柏阔叶山坡
-      vec3 crHigh   = vec3(0.41, 0.47, 0.24); // 向阳高山草甸
-      vec3 crPeak   = vec3(0.58, 0.54, 0.44); // 灰白喀斯特峰脊
-      vec3 crCliff  = vec3(0.40, 0.36, 0.30); // 深切峡谷裸露石灰岩断崖
-      land = mix(crValley, crMid, smoothstep(0.04, 0.34, h));
-      land = mix(land, crHigh, smoothstep(0.34, 0.68, h));
-      land = mix(land, crPeak, smoothstep(0.68, 0.95, h));
-      float cliffMask = smoothstep(0.13, 0.38, slope);
+    // 全战役统一微缩自然山川地貌风格（uGameMode > 0.5：苍翠山林/极寒雪岭/黄土河套/海岸悬崖/西奈荒漠绿洲 + 裸露水平岩层，无人工六边形网格）
+    if (uGameMode > 0.5) {
       float strataBand = 0.85 + 0.15 * sin(h * 135.0 + vWorldPos.x * 22.0);
-      land = mix(land, crCliff * strataBand, cliffMask * 0.86);
+      float cliffMask = smoothstep(0.13, 0.38, slope);
+      if (abs(uBattleCode - 1.0) < 0.2) {
+        // 四渡赤水：苍翠茂密林山 + 喀斯特深切灰褐石灰岩断崖
+        vec3 crValley = vec3(0.13, 0.25, 0.12);
+        vec3 crMid    = vec3(0.24, 0.39, 0.17);
+        vec3 crHigh   = vec3(0.41, 0.47, 0.24);
+        vec3 crPeak   = vec3(0.58, 0.54, 0.44);
+        vec3 crCliff  = vec3(0.40, 0.36, 0.30);
+        land = mix(crValley, crMid, smoothstep(0.04, 0.34, h));
+        land = mix(land, crHigh, smoothstep(0.34, 0.68, h));
+        land = mix(land, crPeak, smoothstep(0.68, 0.95, h));
+        land = mix(land, crCliff * strataBand, cliffMask * 0.86);
+      } else if (abs(uBattleCode - 6.0) < 0.2) {
+        // 西奈半岛：运河西岸尼罗河灌溉绿洲农田 vs 东岸风蚀起伏金赭沙丘与吉迪/米特拉砂岩断崖
+        float westOasis = (1.0 - smoothstep(0.39, 0.44, vUv.x)) * (1.0 - smoothstep(0.24, 0.45, h));
+        vec3 duneLow  = mix(vec3(0.45, 0.35, 0.22), vec3(0.19, 0.33, 0.16), westOasis * 0.82);
+        vec3 duneMid  = vec3(0.62, 0.49, 0.32);
+        vec3 duneHigh = vec3(0.75, 0.61, 0.42);
+        vec3 dunePeak = vec3(0.85, 0.74, 0.56);
+        float sandRipple = 0.96 + 0.04 * sin(vWorldPos.x * 95.0 + vWorldPos.y * 42.0);
+        land = mix(duneLow, duneMid, smoothstep(0.05, 0.34, h)) * sandRipple;
+        land = mix(land, duneHigh, smoothstep(0.34, 0.68, h));
+        land = mix(land, dunePeak, smoothstep(0.68, 0.95, h));
+        land = mix(land, vec3(0.48, 0.35, 0.24) * strataBand, cliffMask * 0.84);
+      } else {
+        // 官渡 / 长津湖 / 诺曼底 / 市场花园：基于各自地域调色盘的自然微缩植被与裸岩层理雕刻
+        land = boostSat(land, 1.16) * 1.06;
+        land = mix(land, uColorRock * strataBand, cliffMask * 0.82);
+        // 诺曼底登陆滩涂金色沙岸带
+        if (abs(uBattleCode - 4.0) < 0.2) {
+          float beachBand = smoothstep(0.32, 0.44, vUv.y) * (1.0 - smoothstep(0.44, 0.50, vUv.y)) * smoothstep(0.02, 0.28, water + (0.18 - h));
+          land = mix(land, vec3(0.78, 0.70, 0.50), clamp(beachBand, 0.0, 1.0) * 0.65);
+        }
+      }
     } else if (uSanguoMode > 0.5) {
       vec3 sgValley = vec3(0.15, 0.31, 0.22);
       vec3 sgMid    = vec3(0.28, 0.42, 0.25);
@@ -814,38 +893,33 @@ const TERRAIN_FS = `
       float cun = sin(vWorldPos.x * 68.0 - vWorldPos.y * 52.0 + h * 15.0) * cos(vWorldPos.y * 82.0 + vWorldPos.x * 36.0);
       float inkStroke = smoothstep(0.15, 0.46, slope) * smoothstep(0.12, 0.72, cun);
       land = mix(land, vec3(0.07, 0.08, 0.07), inkStroke * 0.44);
-    } else if (uGameMode > 0.5) {
-      // 游戏地图模式：提亮草地/林地/平原饱和度，呈现《全面战争/文明》手绘风格色阶
-      land = boostSat(land, 1.38) * 1.24 + vec3(0.02, 0.04, 0.02);
-      float band = floor(h * 10.0) / 10.0;
-      land = mix(land, land * (0.90 + 0.22 * band), 0.38);
     }
 
     // 高频地表微纹理（宣纸纤维 / 砂砾）
     float micro = sin(vWorldPos.x * 110.0 + vWorldPos.y * 84.0) * cos(vWorldPos.y * 116.0 - vWorldPos.x * 74.0);
     land += vec3(micro * (uSanguoMode > 0.5 ? 0.012 : (uGameMode > 0.5 ? 0.010 : 0.015)));
 
-    // 高海拔真实积雪（保留山脊阴阳光影层次不过曝）
+    // 高海拔真实积雪（长津湖盖马高原极寒雪原，陡崖裸露深灰玄武岩脊形成苍劲对比）
     if (uSnowLevel < 2.0 && uSanguoMode < 0.5) {
-      float snow = smoothstep(uSnowLevel - 0.10, uSnowLevel + 0.14, h - slope * 0.36);
-      vec3 snowCol = uGameMode > 0.5 ? vec3(0.76, 0.85, 0.94) : vec3(0.86, 0.91, 0.97);
+      float snow = smoothstep(uSnowLevel - 0.10, uSnowLevel + 0.14, h - slope * 0.42);
+      vec3 snowCol = uGameMode > 0.5 ? vec3(0.84, 0.90, 0.96) : vec3(0.86, 0.91, 0.97);
       land = mix(land, snowCol, snow * 0.92);
     }
 
-    // 2. 盘山公路 / 黄土古驿道
+    // 2. 盘山公路 / 战略公路 / 黄土古驿道
     if (road > 0.02) {
-      float dash = uChishuiRelief > 0.5 ? 0.96 : (0.80 + 0.20 * sin((vWorldPos.x + vWorldPos.y) * 90.0));
-      vec3 roadCol = uChishuiRelief > 0.5
+      float dash = uGameMode > 0.5 ? 0.96 : (0.80 + 0.20 * sin((vWorldPos.x + vWorldPos.y) * 90.0));
+      vec3 roadCol = uGameMode > 0.5
         ? vec3(0.84, 0.70, 0.46)
-        : (uSanguoMode > 0.5 ? vec3(0.88, 0.76, 0.52) : (uGameMode > 0.5 ? vec3(0.95, 0.82, 0.52) : uColorRoad));
-      land = mix(land, roadCol * dash, smoothstep(0.10, 0.68, road) * (uChishuiRelief > 0.5 ? 0.92 : (uSanguoMode > 0.5 ? 0.90 : (uGameMode > 0.5 ? 0.88 : 0.78))));
+        : (uSanguoMode > 0.5 ? vec3(0.88, 0.76, 0.52) : uColorRoad);
+      land = mix(land, roadCol * dash, smoothstep(0.10, 0.68, road) * (uGameMode > 0.5 ? 0.92 : (uSanguoMode > 0.5 ? 0.90 : 0.78)));
     }
 
-    // 3. 赤水山川模式保持纯粹自然地貌（无网格干扰） vs 三国方格 vs 游戏六边形 vs 写实等高线
-    if (uChishuiRelief > 0.5) {
+    // 3. 自然山川微层理（去除人工六边形网格） vs 三国方格 vs 写实双层等高线
+    if (uGameMode > 0.5) {
       float subtleTer = fract(h * 16.0);
       float terLine = 1.0 - smoothstep(0.0, 0.035, min(subtleTer, 1.0 - subtleTer));
-      land = mix(land, land * 0.86, terLine * 0.11 * (1.0 - water));
+      land = mix(land, land * 0.87, terLine * 0.10 * (1.0 - water));
     } else if (uSanguoMode > 0.5) {
       float sgGrid = squareGridEdge(vUv);
       float flatMask = (1.0 - smoothstep(0.18, 0.42, slope)) * (1.0 - water * 0.85);
@@ -853,9 +927,6 @@ const TERRAIN_FS = `
       float inkPhase = fract(h * 14.0);
       float inkLine = 1.0 - smoothstep(0.0, 0.042, min(inkPhase, 1.0 - inkPhase));
       land = mix(land, vec3(0.08, 0.09, 0.08), inkLine * 0.32 * (1.0 - water));
-    } else if (uGameMode > 0.5) {
-      float hx = hexEdge(vUv);
-      land = mix(land, land * 1.22 + vec3(0.08, 0.09, 0.07), hx * 0.26 * (1.0 - water * 0.5));
     } else {
       float cPhase = fract(h * uContourStep);
       float minorC = 1.0 - smoothstep(0.0, 0.06, min(cPhase, 1.0 - cPhase));
@@ -864,73 +935,77 @@ const TERRAIN_FS = `
       land = mix(land, land * 1.24 + vec3(0.045), (minorC * 0.16 + majorC * 0.30) * (1.0 - water));
     }
 
-    // 4. 水域：赤水河红褐丹砂浊浪 + 乌江/长江苍碧江水 + 河湾激流白沫岸线
-    float isWujiangOrYangtze = uChishuiRelief > 0.5
-      ? max(smoothstep(0.72, 0.78, vUv.y) * smoothstep(0.32, 0.42, vUv.x), 1.0 - smoothstep(0.08, 0.14, vUv.y))
-      : 0.0;
-    vec3 crShallow = mix(vec3(0.72, 0.39, 0.30), vec3(0.25, 0.47, 0.58), isWujiangOrYangtze);
-    vec3 crDeep    = mix(vec3(0.50, 0.23, 0.18), vec3(0.13, 0.28, 0.38), isWujiangOrYangtze);
-    vec3 wShallow = uChishuiRelief > 0.5
-      ? crShallow
-      : (uSanguoMode > 0.5
-          ? vec3(0.68, 0.36, 0.20)
-          : (uGameMode > 0.5 ? mix(uColorWater * 1.35, vec3(0.18, 0.68, 0.82), 0.45) : uColorWater));
-    vec3 wDeep = uChishuiRelief > 0.5
-      ? crDeep
-      : (uSanguoMode > 0.5
-          ? vec3(0.38, 0.17, 0.11)
-          : (uGameMode > 0.5 ? mix(uColorWaterDeep * 1.25, vec3(0.08, 0.34, 0.56), 0.45) : uColorWaterDeep));
+    // 4. 分战区真实水系色彩（赤水红浪&乌江碧水 / 黄河浊金&官渡水青碧 / 长津冰湖&日本海 / 海峡白浪 / 莱茵河网 / 苏伊士碧蓝运河）
+    vec3 wShallow = uColorWater;
+    vec3 wDeep = uColorWaterDeep;
+    if (uGameMode > 0.5) {
+      if (abs(uBattleCode - 1.0) < 0.2) {
+        // 四渡赤水：赤水河红褐丹砂水 vs 乌江/长江苍碧江水
+        float isWujiangOrYangtze = max(smoothstep(0.72, 0.78, vUv.y) * smoothstep(0.32, 0.42, vUv.x), 1.0 - smoothstep(0.08, 0.14, vUv.y));
+        wShallow = mix(vec3(0.72, 0.39, 0.30), vec3(0.25, 0.47, 0.58), isWujiangOrYangtze);
+        wDeep    = mix(vec3(0.50, 0.23, 0.18), vec3(0.13, 0.28, 0.38), isWujiangOrYangtze);
+      } else if (abs(uBattleCode - 2.0) < 0.2) {
+        // 官渡之战：北侧黄河浊金泥沙巨流 vs 南侧官渡水/鸿沟苍碧水系
+        float isCanal = smoothstep(0.39, 0.46, vUv.y);
+        wShallow = mix(vec3(0.72, 0.54, 0.28), vec3(0.25, 0.46, 0.54), isCanal);
+        wDeep    = mix(vec3(0.49, 0.35, 0.16), vec3(0.13, 0.28, 0.36), isCanal);
+      } else if (abs(uBattleCode - 3.0) < 0.2) {
+        // 长津湖：北侧冰封长津湖晶莹冰面 vs 东南兴南港外日本海寒流深海
+        float isSea = smoothstep(0.60, 0.72, vUv.y);
+        wShallow = mix(vec3(0.64, 0.83, 0.95), vec3(0.18, 0.40, 0.56), isSea);
+        wDeep    = mix(vec3(0.42, 0.66, 0.84), vec3(0.07, 0.19, 0.32), isSea);
+      } else if (abs(uBattleCode - 6.0) < 0.2) {
+        // 西奈半岛：苏伊士运河与大苦湖宝石碧蓝水道
+        wShallow = vec3(0.17, 0.54, 0.66);
+        wDeep    = vec3(0.07, 0.28, 0.43);
+      } else {
+        // 诺曼底英吉利海峡 / 市场花园莱茵河网
+        wShallow = vec3(0.24, 0.47, 0.58);
+        wDeep    = vec3(0.10, 0.25, 0.37);
+      }
+    } else if (uSanguoMode > 0.5) {
+      wShallow = vec3(0.68, 0.36, 0.20);
+      wDeep    = vec3(0.38, 0.17, 0.11);
+    }
+
     vec3 waterCol = mix(wShallow, wDeep, smoothstep(0.32, 0.94, water));
-    float ripple = sin(vWorldPos.x * 36.0 + uTime * 1.6) * cos(vWorldPos.y * 32.0 - uTime * 1.2) * (uChishuiRelief > 0.5 ? 0.044 : (uSanguoMode > 0.5 ? 0.036 : (uGameMode > 0.5 ? 0.042 : 0.028)));
+    float ripple = sin(vWorldPos.x * 36.0 + uTime * 1.6) * cos(vWorldPos.y * 32.0 - uTime * 1.2) * (uGameMode > 0.5 ? 0.042 : 0.028);
     float shoreline = smoothstep(0.10, 0.34, water) * (1.0 - smoothstep(0.34, 0.68, water));
     float foamWave = 0.68 + 0.32 * sin(uTime * 2.4 + water * 20.0 + vWorldPos.x * 18.0);
-    if (uChishuiRelief > 0.5 && water > 0.2) {
-      float rapids = smoothstep(0.45, 0.92, sin(vWorldPos.x * 48.0 - vWorldPos.y * 42.0 + uTime * 1.8) * cos(vWorldPos.y * 54.0 + uTime * 0.9));
-      waterCol = mix(waterCol, vec3(0.95, 0.89, 0.84), rapids * 0.28 * (1.0 - isWujiangOrYangtze * 0.4));
+    if (uGameMode > 0.5 && water > 0.2) {
+      float rapids = smoothstep(0.46, 0.92, sin(vWorldPos.x * 48.0 - vWorldPos.y * 42.0 + uTime * 1.8) * cos(vWorldPos.y * 54.0 + uTime * 0.9));
+      waterCol = mix(waterCol, vec3(0.94, 0.91, 0.87), rapids * 0.24);
     }
     vec3 baseCol = mix(land, waterCol + ripple, smoothstep(0.14, 0.54, water));
-    vec3 shoreCol = uChishuiRelief > 0.5
-      ? vec3(0.92, 0.86, 0.78) * foamWave
-      : (uSanguoMode > 0.5
-          ? vec3(0.86, 0.76, 0.56) * foamWave
-          : (uGameMode > 0.5 ? vec3(0.45, 0.62, 0.70) * foamWave : vec3(0.20, 0.26, 0.30)));
-    baseCol += shoreCol * shoreline * (uChishuiRelief > 0.5 ? 0.84 : 0.72);
+    vec3 shoreCol = uGameMode > 0.5
+      ? vec3(0.92, 0.88, 0.82) * foamWave
+      : (uSanguoMode > 0.5 ? vec3(0.86, 0.76, 0.56) * foamWave : vec3(0.20, 0.26, 0.30));
+    baseCol += shoreCol * shoreline * (uGameMode > 0.5 ? 0.82 : 0.72);
 
-    // 5. 光照模型（赤水山川自然暖阳与峡谷薄雾 vs 三国 vs 游戏 vs 写实）
+    // 5. 光照模型（自然立体山影与低谷薄雾流云 vs 写实斜阳）
     float diff = max(dot(N, L), 0.0);
     float fill = max(dot(N, normalize(vec3(-0.65, -0.45, 0.55))), 0.0) * 0.32;
     float rim = pow(1.0 - max(dot(N, V), 0.0), 3.0) * (0.26 + 0.42 * h);
     float ao = 0.54 + 0.46 * smoothstep(0.0, 0.50, h);
 
     vec3 lit;
-    if (uChishuiRelief > 0.5) {
+    if (uGameMode > 0.5) {
       float crDiff = mix(diff, smoothstep(0.08, 0.84, diff), 0.42);
-      vec3 crSun = vec3(1.22, 1.11, 0.93);
-      vec3 crSky = vec3(0.52, 0.62, 0.66);
+      vec3 crSun = abs(uBattleCode - 3.0) < 0.2 ? vec3(1.14, 1.16, 1.22) : vec3(1.22, 1.11, 0.93);
+      vec3 crSky = abs(uBattleCode - 3.0) < 0.2 ? vec3(0.56, 0.68, 0.82) : vec3(0.52, 0.62, 0.66);
       lit = baseCol * (crSky * 0.42 + crSun * crDiff * 0.98 + crSky * fill) * ao;
       lit += vec3(0.46, 0.44, 0.38) * rim * (1.0 - water * 0.45);
-      // 娄山与赤水深谷间缭绕的轻薄山岚云雾
+      // 河谷/海滩低处轻薄山岚云雾（西奈晴朗荒漠减淡雾气）
+      float mistScale = abs(uBattleCode - 6.0) < 0.2 ? 0.07 : 0.18;
       float mistNoise = 0.5 + 0.5 * sin(vWorldPos.x * 4.2 + uTime * 0.24) * cos(vWorldPos.y * 3.6 - uTime * 0.18);
       float valleyMist = (1.0 - smoothstep(0.08, 0.42, h)) * (1.0 - water * 0.75) * smoothstep(0.38, 0.88, mistNoise);
-      lit = mix(lit, vec3(0.88, 0.87, 0.83), valleyMist * 0.20);
+      lit = mix(lit, vec3(0.88, 0.88, 0.85), valleyMist * mistScale);
     } else if (uSanguoMode > 0.5) {
       float sgDiff = mix(diff, smoothstep(0.10, 0.80, diff), 0.48);
       vec3 sgSun = vec3(1.20, 1.04, 0.80);
       vec3 sgSky = vec3(0.54, 0.64, 0.60);
       lit = baseCol * (sgSky * 0.44 + sgSun * sgDiff * 0.96 + sgSky * fill) * ao;
       lit += vec3(0.56, 0.48, 0.34) * rim * (1.0 - water * 0.45);
-      float mistNoise = 0.5 + 0.5 * sin(vWorldPos.x * 4.6 + uTime * 0.28) * cos(vWorldPos.y * 3.9 - uTime * 0.21);
-      float valleyMist = (1.0 - smoothstep(0.06, 0.40, h)) * (1.0 - water * 0.55) * smoothstep(0.32, 0.86, mistNoise);
-      lit = mix(lit, vec3(0.84, 0.80, 0.70), valleyMist * 0.24);
-    } else if (uGameMode > 0.5) {
-      // 风格化游戏半卡通高光阶梯 + 晴空天蓝阴坡补光
-      float toonDiff = mix(diff, smoothstep(0.12, 0.82, diff), 0.55);
-      float cloud = sin(vWorldPos.x * 2.4 + uTime * 0.22) * cos(vWorldPos.y * 2.1 - uTime * 0.16);
-      float cloudShadow = 0.88 + 0.12 * smoothstep(-0.3, 0.6, cloud);
-      vec3 gameSun = vec3(1.18, 1.09, 0.94);
-      vec3 gameSky = vec3(0.56, 0.78, 1.0);
-      lit = baseCol * (gameSky * 0.48 + gameSun * toonDiff * 0.92 + gameSky * fill) * ao * cloudShadow;
-      lit += vec3(0.42, 0.46, 0.50) * rim * (1.0 - water * 0.4);
     } else {
       float backShadow = smoothstep(-0.35, 0.25, dot(N, L));
       vec3 sunTint = vec3(1.12, 1.03, 0.92);
@@ -979,12 +1054,10 @@ const TERRAIN_FS = `
 
     // 远景大气空气透视
     float dist = length(uEyePos - vWorldPos);
-    float fog = smoothstep(3.2, 6.4, dist) * (uChishuiRelief > 0.5 ? 0.15 : (uSanguoMode > 0.5 ? 0.24 : (uGameMode > 0.5 ? 0.24 : 0.35)));
-    vec3 fogCol = uChishuiRelief > 0.5
-      ? vec3(0.09, 0.12, 0.11)
-      : (uSanguoMode > 0.5
-          ? vec3(0.20, 0.18, 0.14)
-          : (uGameMode > 0.5 ? mix(uFogColor * 1.8, vec3(0.16, 0.24, 0.34), 0.5) : uFogColor));
+    float fog = smoothstep(3.2, 6.4, dist) * (uGameMode > 0.5 ? 0.16 : (uSanguoMode > 0.5 ? 0.24 : 0.35));
+    vec3 fogCol = uGameMode > 0.5
+      ? uFogColor * 1.35
+      : (uSanguoMode > 0.5 ? vec3(0.20, 0.18, 0.14) : uFogColor);
     lit = mix(lit, fogCol, fog);
 
     // 柔和胶片色调映射，防止高亮雪峰过曝丢细节
@@ -1013,25 +1086,12 @@ const SKIRT_FS = `
   varying float vZ;
   uniform vec3 uSkirtTop;
   uniform vec3 uSkirtBottom;
-  uniform float uGameMode;
-  uniform float uSanguoMode;
-  uniform float uChishuiRelief;
   void main() {
     float t = smoothstep(-0.22, 0.28, vZ);
-    // 赤水山川模式无木框、无铜边，采用纯粹深色喀斯特岩层自然切面
-    vec3 topC = uChishuiRelief > 0.5
-      ? uSkirtTop
-      : (uGameMode > 0.5 ? mix(uSkirtTop * 1.35, vec3(0.48, 0.35, 0.20), 0.45) : uSkirtTop);
-    vec3 botC = uChishuiRelief > 0.5
-      ? uSkirtBottom
-      : (uGameMode > 0.5 ? vec3(0.14, 0.10, 0.07) : uSkirtBottom);
-    vec3 col = mix(botC, topC, t) * vShade;
+    // 全战役统一无木框、无金属描边，采用纯粹深色岩层地质自然切面
+    vec3 col = mix(uSkirtBottom, uSkirtTop, t) * vShade;
     float strata = smoothstep(0.90, 1.0, abs(sin(vZ * 58.0)));
-    col += vec3((uGameMode > 0.5 && uChishuiRelief < 0.5) ? 0.06 : 0.042) * strata;
-    if (uGameMode > 0.5 && uChishuiRelief < 0.5) {
-      float brass = 1.0 - smoothstep(0.0, 0.018, abs(vZ + 0.19));
-      col = mix(col, vec3(0.84, 0.66, 0.32), brass * 0.85);
-    }
+    col += vec3(0.042) * strata;
     gl_FragColor = vec4(col, 1.0);
   }
 `;
@@ -1081,8 +1141,7 @@ const PARTICLE_VS = `
   uniform mat4 uMvp;
   uniform float uTime;
   uniform float uPointScale;
-  uniform float uGameMode;
-  uniform mediump float uChishuiRelief;
+  uniform mediump float uGameMode;
   varying float vAlpha;
   varying float vKind;
   void main() {
@@ -1108,11 +1167,11 @@ const PARTICLE_VS = `
       vAlpha = (1.0 - rise) * 0.94;
       gl_PointSize = (5.2 - rise * 2.4) * uPointScale;
     } else {
-      // 3D 微缩山林（游戏模式开启，四渡赤水升级为团簇茂密林海）
-      float sizeVar = 0.85 + 0.42 * fract(sin(aSeed.x * 91.7 + aSeed.y * 173.3) * 43758.5);
-      pos = vec3(aSeed.x, aSeed.y, aSeed.z + (uChishuiRelief > 0.5 ? 0.012 : 0.014));
+      // 全战役 3D 微缩山林（团簇阔叶林与针叶松柏混合）
+      float sizeVar = 0.84 + 0.42 * fract(sin(aSeed.x * 91.7 + aSeed.y * 173.3) * 43758.5);
+      pos = vec3(aSeed.x, aSeed.y, aSeed.z + 0.012);
       vAlpha = uGameMode > 0.5 ? 0.96 : 0.0;
-      gl_PointSize = (uGameMode > 0.5 ? (uChishuiRelief > 0.5 ? 12.8 * sizeVar : 11.5) : 0.0) * uPointScale;
+      gl_PointSize = (uGameMode > 0.5 ? 12.6 * sizeVar : 0.0) * uPointScale;
     }
     gl_Position = uMvp * vec4(pos, 1.0);
   }
@@ -1123,12 +1182,12 @@ const PARTICLE_FS = `
   varying float vAlpha;
   varying float vKind;
   uniform float uSnowLevel;
-  uniform float uChishuiRelief;
+  uniform mediump float uGameMode;
   void main() {
     if (vAlpha <= 0.01) discard;
     if (vKind > 1.5) {
       vec2 p = gl_PointCoord;
-      if (uChishuiRelief > 0.5 && vKind > 2.5) {
+      if (uGameMode > 0.5 && vKind > 2.5) {
         // 茂密山林团簇树冠（立体球状林冠 + 底部投影暗部）
         vec2 d1 = (p - vec2(0.50, 0.44)) * vec2(1.05, 1.22);
         vec2 d2 = (p - vec2(0.34, 0.58)) * vec2(1.35, 1.45);
@@ -1290,7 +1349,7 @@ export class Terrain3DEngine {
       canvas.getContext("webgl", { alpha: true, premultipliedAlpha: false }) ||
       canvas.getContext("experimental-webgl", { alpha: true, premultipliedAlpha: false });
     if (!gl) {
-      console.error("[Terrain3D] WebGL context unavailable (getContext returned null)");
+      console.warn("[Terrain3D] WebGL context unavailable, falling back to CSS 3D");
       return;
     }
     this.gl = gl;
@@ -1811,26 +1870,28 @@ export class Terrain3DEngine {
     const gl = this.gl;
     const data = [];
 
-    // 1. 微缩松林与赤水茂密阔叶山林（自动分布在非水域、非公路、非主城的山坡林区）
+    // 1. 全战役地域自适应微缩山林（自动避开水域、公路与荒漠，按温带/寒带区分阔叶团簇林与寒带针叶松）
     const seed = this.profile.seed || 100;
-    const isChishui = this.battleId === "chishui-1935";
-    const treeSamples = isChishui ? 960 : 420;
+    const bId = this.battleId || "";
+    const isSnow = bId === "changjin-1950";
+    const isDesert = bId === "sinai-1973";
+    const treeSamples = isDesert ? 260 : bId === "chishui-1935" ? 960 : 820;
     for (let i = 0; i < treeSamples; i++) {
       const mx = 34 + hash2(i, 11, seed) * (MAP_W - 68);
       const my = 34 + hash2(i, 17, seed) * (MAP_H - 68);
-      if (isChishui) {
+      if (isDesert && mx > 372) continue; // 西奈半岛仅在苏伊士运河西岸尼罗河绿洲带生长林木
+      if (bId === "chishui-1935") {
         if (Math.hypot(mx - 552, my - 410) < 34 || Math.hypot(mx - 570, my - 535) < 36 || Math.hypot(mx - 276, my - 658) < 32) {
           continue;
         }
       }
       const s = this.profile.sample(mx, my);
       if (s.water > 0.06 || (s.road || 0) > 0.12) continue;
-      if (s.h < 0.11 || s.h > (isChishui ? 0.78 : 0.62)) continue;
-      // 聚团成林而非均匀撒点
-      if (fbm(mx * 0.012, my * 0.012, seed + 88, 2) < (isChishui ? 0.36 : 0.44)) continue;
+      if (s.h < (isDesert ? 0.06 : 0.11) || s.h > (isSnow ? 0.64 : 0.78)) continue;
+      if (fbm(mx * 0.012, my * 0.012, seed + 88, 2) < (isDesert ? 0.42 : 0.37)) continue;
       const [wx, wy] = this.mapToWorldXY(mx, my);
       const wz = s.h * this.profile.heightScale;
-      const treeKind = isChishui && i % 3 !== 0 ? 3 : 2;
+      const treeKind = isSnow ? 2 : (i % 3 !== 0 ? 3 : 2);
       data.push(wx, wy, wz, treeKind);
     }
 
@@ -1971,13 +2032,21 @@ export class Terrain3DEngine {
     gl.uniform3fv(gl.getUniformLocation(this.terrainProg, "uEyePos"), this.eyePos);
     const isGame = this.renderStyle === "game" ? 1.0 : 0.0;
     const isSanguo = this.renderStyle === "sanguo" ? 1.0 : 0.0;
-    const isChishuiRelief = this.battleId === "chishui-1935" && this.renderStyle === "game" ? 1.0 : 0.0;
+    const battleCodeMap = {
+      "chishui-1935": 1.0,
+      "guandu-200": 2.0,
+      "changjin-1950": 3.0,
+      "normandy-1944": 4.0,
+      "market-garden-1944": 5.0,
+      "sinai-1973": 6.0
+    };
+    const battleCode = battleCodeMap[this.battleId] || 0.0;
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uContourStep"), this.profile.contourStep);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uSnowLevel"), this.profile.snowLevel);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uTime"), timeSec);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uGameMode"), isGame);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uSanguoMode"), isSanguo);
-    gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uChishuiRelief"), isChishuiRelief);
+    gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uBattleCode"), battleCode);
     gl.uniform1f(gl.getUniformLocation(this.terrainProg, "uShowCombat"), showCombat ? 1.0 : 0.0);
     gl.uniform2fv(gl.getUniformLocation(this.terrainProg, "uRedUnits"), this.redUnitsFlat);
     gl.uniform2fv(gl.getUniformLocation(this.terrainProg, "uBlueUnits"), this.blueUnitsFlat);
@@ -2001,9 +2070,6 @@ export class Terrain3DEngine {
       gl.uniformMatrix4fv(gl.getUniformLocation(this.skirtProg, "uMvp"), false, this.mvp);
       gl.uniform3fv(gl.getUniformLocation(this.skirtProg, "uSkirtTop"), pal.skirtTop);
       gl.uniform3fv(gl.getUniformLocation(this.skirtProg, "uSkirtBottom"), pal.skirtBottom);
-      gl.uniform1f(gl.getUniformLocation(this.skirtProg, "uGameMode"), isGame);
-      gl.uniform1f(gl.getUniformLocation(this.skirtProg, "uSanguoMode"), isSanguo);
-      gl.uniform1f(gl.getUniformLocation(this.skirtProg, "uChishuiRelief"), isChishuiRelief);
       gl.drawArrays(gl.TRIANGLES, 0, this.skirtBuf.count);
     }
 
@@ -2109,7 +2175,6 @@ export class Terrain3DEngine {
       gl.uniform1f(gl.getUniformLocation(this.particleProg, "uTime"), timeSec);
       gl.uniform1f(gl.getUniformLocation(this.particleProg, "uPointScale"), this.dpr);
       gl.uniform1f(gl.getUniformLocation(this.particleProg, "uGameMode"), isGame);
-      gl.uniform1f(gl.getUniformLocation(this.particleProg, "uChishuiRelief"), isChishuiRelief);
       gl.uniform1f(gl.getUniformLocation(this.particleProg, "uSnowLevel"), this.profile.snowLevel);
       gl.drawArrays(gl.POINTS, 0, this.particleCount);
     }

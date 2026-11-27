@@ -2,7 +2,7 @@
 // 支持真实起伏地形与实时软阴影、实体 3D 森林与城池关隘、分时代不同军装 3D 立体小人方阵/骑兵/坦克、
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
-import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=30";
+import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=31";
 import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=25";
 import { VoiceNarrator } from "./voiceNarrator.js?v=3";
 import { getPhaseTurnScript } from "../data/turnScripts.js?v=2";
@@ -499,17 +499,8 @@ export class MapRenderer {
           }
         } else if (action === "toggle-style") {
           const cur = this.stageEl.dataset.mapStyle || "game";
-          const isChishui = this.battle?.id === "chishui-1935";
-          const next = isChishui
-            ? cur === "sanguo"
-              ? "game"
-              : cur === "game"
-                ? "realistic"
-                : "sanguo"
-            : cur === "realistic"
-              ? "game"
-              : "realistic";
-          this.applyMapStyle(next, { rebuildFortresses: isChishui });
+          const next = cur === "realistic" ? "game" : "realistic";
+          this.applyMapStyle(next);
         } else if (action === "reset") {
           this.cam = this.viewMode === "3d" ? { ...DEFAULT_CAM_3D } : { ...DEFAULT_CAM_2D };
           this.applyCamera();

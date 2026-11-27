@@ -6,7 +6,7 @@
     <meta name="description" content="战史沙盘：以三维立体交互方式推演古今中外著名战役——四渡赤水、官渡之战、长津湖战役、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
     <title>战史沙盘｜世界历史著名战役三维交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=25" />
+    <link rel="stylesheet" href="./styles.css?v=32" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
@@ -261,11 +261,11 @@
                     <feGaussianBlur stdDeviation="4" result="blur" />
                     <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
                   </filter>
-                  <marker id="arrow-red" viewBox="0 0 12 12" markerWidth="14" markerHeight="14" refX="9.5" refY="6" orient="auto" markerUnits="userSpaceOnUse">
-                    <path d="M1,1.5 L11,6 L1,10.5 L3.6,6 z" fill="#e2513f" />
+                  <marker id="arrow-red" viewBox="0 0 14 14" markerWidth="16" markerHeight="16" refX="11" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+                    <path d="M1,1.6 L13,7 L1,12.4 L4.1,7 z" fill="#e2513f" stroke="rgba(255,248,232,0.85)" stroke-width="0.9" stroke-linejoin="round" />
                   </marker>
-                  <marker id="arrow-enemy" viewBox="0 0 12 12" markerWidth="11" markerHeight="11" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
-                    <path d="M1.5,2 L10.5,6 L1.5,10 L3.5,6 z" fill="#8aa2aa" />
+                  <marker id="arrow-enemy" viewBox="0 0 14 14" markerWidth="14" markerHeight="14" refX="10.5" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+                    <path d="M1.4,2 L12.6,7 L1.4,12 L4,7 z" fill="#72beea" stroke="rgba(255,255,255,0.75)" stroke-width="0.8" stroke-linejoin="round" />
                   </marker>
                   <pattern id="map-grid" width="40" height="40" patternUnits="userSpaceOnUse">
                     <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-opacity=".07" stroke-width="1" />
@@ -451,6 +451,6 @@
       <p data-i18n="footerDisclaimer">地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=31"></script>
+    <script type="module" src="./app.js?v=33"></script>
   </body>
 </html>

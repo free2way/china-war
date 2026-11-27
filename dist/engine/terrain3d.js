@@ -1117,20 +1117,51 @@ const RIBBON_FS = `
   uniform float uDashScale;
   uniform float uSpeed;
   uniform float uProgress;
+  uniform float uHasArrow;
   void main() {
-    // 随阶段切换渐进推进生长动画
-    float reveal = 1.0 - smoothstep(uProgress - 0.03, uProgress + 0.01, vUv.z);
-    if (reveal <= 0.01) discard;
-
+    if (vUv.z > uProgress + 0.004) discard;
     float across = 1.0 - abs(vUv.y);
+
+    // 生长动画进行中：最前端自动收尖为锐利矛头，时刻指示推进方向
+    if (uHasArrow > 0.5 && uProgress < 0.96 && vUv.z > uProgress - 0.085) {
+      float frontSpan = max(0.001, (uProgress - vUv.z) / 0.085);
+      if (abs(vUv.y) > frontSpan) discard;
+      float spearRim = 1.0 - smoothstep(0.0, 0.28, frontSpan - abs(vUv.y));
+      vec3 spearCol = mix(uColor * 1.12, vec3(1.0, 0.97, 0.88), 0.35 + spearRim * 0.55);
+      gl_FragColor = vec4(spearCol, min(1.0, uAlpha * 1.08));
+      return;
+    }
+
+    // 末端实体几何三角箭簇（vUv.z >= 0.845）：实心锐利轮廓 + 亮白描边，绝不虚化发散
+    if (uHasArrow > 0.5 && vUv.z >= 0.845) {
+      float headEdge = smoothstep(0.0, 0.08, across);
+      if (headEdge <= 0.01) discard;
+      float neckEdge = 1.0 - smoothstep(0.845, 0.868, vUv.z);
+      float outerRim = (1.0 - smoothstep(0.08, 0.28, across)) * headEdge;
+      float rim = max(outerRim, neckEdge * step(0.38, abs(vUv.y)));
+      vec3 headCol = mix(uColor * 1.10, vec3(1.0, 0.97, 0.88), 0.18 + rim * 0.72);
+      gl_FragColor = vec4(headCol, headEdge * min(1.0, uAlpha * 1.12));
+      return;
+    }
+
+    // 箭杆主体：双侧清晰边线 + 沿运动方向排列的高对比 V 形方向纹（>>>），静态或暂停时同样一眼辨明去向
+    float bodyEdge = smoothstep(0.0, 0.14, across);
+    if (bodyEdge <= 0.01) discard;
+    if (uHasArrow > 0.5) {
+      float sideRail = smoothstep(0.04, 0.15, across) * (1.0 - smoothstep(0.15, 0.30, across));
+      float chevCoord = fract(vUv.x * uDashScale - abs(vUv.y) * 0.68 - uTime * uSpeed);
+      float chevron = smoothstep(0.50, 0.68, chevCoord) * (1.0 - smoothstep(0.82, 0.95, chevCoord));
+      vec3 col = mix(uColor, vec3(1.0, 0.97, 0.88), chevron * 0.68 + sideRail * 0.42);
+      float alpha = bodyEdge * (0.52 + chevron * 0.46 + sideRail * 0.32) * uAlpha;
+      gl_FragColor = vec4(col, clamp(alpha, 0.0, 0.98));
+      return;
+    }
+
+    // 防御圈/包围圈光环与无箭头辅助线
     float edgeGlow = smoothstep(0.0, 0.42, across);
-    float chevronCoord = vUv.x * uDashScale - abs(vUv.y) * 0.48 - uTime * uSpeed;
-    float wave = smoothstep(0.18, 0.85, fract(chevronCoord));
-    // 箭头尖端加亮
-    float headBoost = smoothstep(0.84, 0.98, vUv.z) * 0.35;
-    float pulse = 0.56 + 0.44 * wave;
-    vec3 col = mix(uColor, vec3(1.0, 0.97, 0.88), smoothstep(0.55, 1.0, across) * 0.48 + wave * 0.16 + headBoost);
-    gl_FragColor = vec4(col, edgeGlow * pulse * uAlpha * reveal);
+    float wave = smoothstep(0.18, 0.85, fract(vUv.x * uDashScale - uTime * uSpeed));
+    vec3 col = mix(uColor, vec3(1.0, 0.97, 0.88), wave * 0.22);
+    gl_FragColor = vec4(col, edgeGlow * (0.56 + 0.44 * wave) * uAlpha);
   }
 `;
 
@@ -1529,7 +1560,7 @@ export class Terrain3DEngine {
     this.skirtBuf = { vbo, count: data.length / 4 };
   }
 
-  // 构建带三维三角形箭头的贴地态势大箭头（纪录片风格）
+  // 构建带精准三维等腰三角箭簇与行进方向纹的贴地态势路线
   setRoutes(routeSpecs) {
     if (!this.ready) return;
     const gl = this.gl;
@@ -1542,42 +1573,103 @@ export class Terrain3DEngine {
       const baseHalfW = spec.width || 0.022;
       const hover = spec.hover || 0.022;
       const hasArrow = spec.arrow !== false;
-      const verts = [];
-      let accum = 0;
-      const totalIdx = pts.length - 1;
 
+      // 转换世界坐标并计算精确弧长表，支持任意短/长折线平滑重采样与独立几何箭簇生成
+      const nodes = [];
+      let totalLen = 0;
       for (let i = 0; i < pts.length; i++) {
-        const [x, y] = pts[i];
-        const [wx, wy] = this.mapToWorldXY(x, y);
-        const wz = this.sampleElevation(x, y) + hover;
-        const normT = i / totalIdx;
+        const [mx, my] = pts[i];
+        const [wx, wy] = this.mapToWorldXY(mx, my);
         if (i > 0) {
-          const [px, py] = this.mapToWorldXY(pts[i - 1][0], pts[i - 1][1]);
-          accum += Math.hypot(wx - px, wy - py);
+          const prev = nodes[i - 1];
+          const seg = Math.hypot(wx - prev.wx, wy - prev.wy);
+          if (seg < 1e-5) continue;
+          totalLen += seg;
         }
+        nodes.push({ mx, my, wx, wy, d: totalLen });
+      }
+      if (nodes.length < 2 || totalLen < 0.012) continue;
 
-        const prev = pts[Math.max(0, i - 1)];
-        const next = pts[Math.min(totalIdx, i + 1)];
-        const [pwx, pwy] = this.mapToWorldXY(prev[0], prev[1]);
-        const [nwx, nwy] = this.mapToWorldXY(next[0], next[1]);
-        let tx = nwx - pwx;
-        let ty = nwy - pwy;
-        const tLen = Math.hypot(tx, ty) || 1;
-        tx /= tLen;
-        ty /= tLen;
+      const sampleAt = (dist) => {
+        const clamped = Math.max(0, Math.min(totalLen, dist));
+        let idx = 0;
+        while (idx < nodes.length - 2 && nodes[idx + 1].d < clamped) idx++;
+        const a = nodes[idx];
+        const b = nodes[idx + 1];
+        const span = Math.max(1e-6, b.d - a.d);
+        const t = (clamped - a.d) / span;
+        return {
+          mx: a.mx + (b.mx - a.mx) * t,
+          my: a.my + (b.my - a.my) * t,
+          wx: a.wx + (b.wx - a.wx) * t,
+          wy: a.wy + (b.wy - a.wy) * t
+        };
+      };
 
-        // 尾部渐宽 -> 中段饱满 -> 末端三角大箭头造型
-        let widthFactor = 0.62 + 0.45 * smoothstep(0.0, 0.35, normT);
-        if (hasArrow && normT > 0.86) {
-          const headT = (normT - 0.86) / 0.14; // 0 -> 1
-          widthFactor = headT < 0.16 ? 2.15 : 2.15 * (1 - (headT - 0.16) / 0.84);
-        }
+      const tangentAt = (dist) => {
+        const p0 = sampleAt(dist - 0.022);
+        const p1 = sampleAt(dist + 0.022);
+        let tx = p1.wx - p0.wx;
+        let ty = p1.wy - p0.wy;
+        const len = Math.hypot(tx, ty) || 1;
+        return [tx / len, ty / len];
+      };
+
+      const verts = [];
+      const headLen = hasArrow ? Math.min(totalLen * 0.38, Math.max(0.056, baseHalfW * 4.0)) : 0;
+      const shaftLen = Math.max(0.004, totalLen - headLen);
+      const shaftSteps = Math.max(12, Math.min(72, Math.ceil(shaftLen / 0.018)));
+
+      // 1. 箭杆段（0 .. shaftLen，normT 映射至 0 .. 0.84）
+      for (let i = 0; i <= shaftSteps; i++) {
+        const frac = i / shaftSteps;
+        const d = frac * shaftLen;
+        const p = sampleAt(d);
+        const [tx, ty] = tangentAt(d);
+        const wz = this.sampleElevation(p.mx, p.my) + hover;
+        const widthFactor = 0.74 + 0.26 * smoothstep(0.0, 0.25, frac);
         const hw = Math.max(0.001, baseHalfW * widthFactor);
         const perpX = -ty * hw;
         const perpY = tx * hw;
+        const normT = hasArrow ? frac * 0.84 : frac;
+        verts.push(p.wx + perpX, p.wy + perpY, wz, d, 1, normT);
+        verts.push(p.wx - perpX, p.wy - perpY, wz, d, -1, normT);
+      }
 
-        verts.push(wx + perpX, wy + perpY, wz, accum, 1, normT);
-        verts.push(wx - perpX, wy - perpY, wz, accum, -1, normT);
+      // 2. 末端独立锁向等腰三角箭簇（2.75 倍宽倒刺两翼 -> 锐利针尖，永不因采样稀疏丢失或随弯道扭曲）
+      if (hasArrow && headLen > 0.004) {
+        const neck = sampleAt(shaftLen);
+        const tip = nodes[nodes.length - 1];
+        let htx = tip.wx - neck.wx;
+        let hty = tip.wy - neck.wy;
+        let chord = Math.hypot(htx, hty);
+        if (chord < 1e-4) {
+          [htx, hty] = tangentAt(totalLen);
+          chord = headLen;
+        } else {
+          htx /= chord;
+          hty /= chord;
+        }
+        const wingHalfW = baseHalfW * 2.75;
+        const headProfile = [
+          { f: 0.0, hw: baseHalfW, nt: 0.846 },
+          { f: 0.02, hw: wingHalfW, nt: 0.855 },
+          { f: 0.36, hw: wingHalfW * 0.65, nt: 0.905 },
+          { f: 0.70, hw: wingHalfW * 0.31, nt: 0.955 },
+          { f: 1.0, hw: 0.0005, nt: 1.0 }
+        ];
+        for (const step of headProfile) {
+          const wx = neck.wx + htx * chord * step.f;
+          const wy = neck.wy + hty * chord * step.f;
+          const mx = neck.mx + (tip.mx - neck.mx) * step.f;
+          const my = neck.my + (tip.my - neck.my) * step.f;
+          const wz = this.sampleElevation(mx, my) + hover + 0.003;
+          const perpX = -hty * step.hw;
+          const perpY = htx * step.hw;
+          const d = shaftLen + headLen * step.f;
+          verts.push(wx + perpX, wy + perpY, wz, d, 1, step.nt);
+          verts.push(wx - perpX, wy - perpY, wz, d, -1, step.nt);
+        }
       }
 
       const vbo = gl.createBuffer();
@@ -1591,6 +1683,7 @@ export class Terrain3DEngine {
         dashScale: spec.dashScale ?? 6.5,
         speed: spec.speed ?? 1.5,
         animateDraw: spec.animateDraw ?? false,
+        hasArrow,
         side: spec.side || "red"
       });
     }
@@ -2107,6 +2200,7 @@ export class Terrain3DEngine {
       const dashLoc = gl.getUniformLocation(this.ribbonProg, "uDashScale");
       const speedLoc = gl.getUniformLocation(this.ribbonProg, "uSpeed");
       const progLoc = gl.getUniformLocation(this.ribbonProg, "uProgress");
+      const hasArrowLoc = gl.getUniformLocation(this.ribbonProg, "uHasArrow");
 
       for (const ring of this.rings) {
         gl.bindBuffer(gl.ARRAY_BUFFER, ring.vbo);
@@ -2119,6 +2213,7 @@ export class Terrain3DEngine {
         gl.uniform1f(dashLoc, 8.0);
         gl.uniform1f(speedLoc, 0.9);
         gl.uniform1f(progLoc, 1.0);
+        gl.uniform1f(hasArrowLoc, 0.0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, ring.count);
       }
 
@@ -2138,6 +2233,7 @@ export class Terrain3DEngine {
         gl.uniform1f(dashLoc, r.dashScale);
         gl.uniform1f(speedLoc, r.speed);
         gl.uniform1f(progLoc, r.animateDraw ? easedProg : 1.0);
+        gl.uniform1f(hasArrowLoc, r.hasArrow ? 1.0 : 0.0);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, r.count);
       }
     }

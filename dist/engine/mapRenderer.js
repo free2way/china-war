@@ -2,7 +2,7 @@
 // 支持真实起伏地形与实时软阴影、实体 3D 森林与城池关隘、分时代不同军装 3D 立体小人方阵/骑兵/坦克、
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
-import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=31";
+import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=32";
 import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=25";
 import { VoiceNarrator } from "./voiceNarrator.js?v=3";
 import { getPhaseTurnScript } from "../data/turnScripts.js?v=2";
@@ -890,7 +890,8 @@ export class MapRenderer {
         const path = makeSvg("path", {
           class: `route route-${idx}`,
           d: phase.route,
-          "data-phase-route": idx
+          "data-phase-route": idx,
+          "marker-end": "url(#arrow-red)"
         });
         routesLayer.append(path);
       });
@@ -898,7 +899,8 @@ export class MapRenderer {
         routesLayer.append(
           makeSvg("path", {
             class: "route-future",
-            d: mapConfig.futureRoute
+            d: mapConfig.futureRoute,
+            "marker-end": "url(#arrow-red)"
           })
         );
       }
@@ -2199,23 +2201,37 @@ export class MapRenderer {
   }
 
   renderComparePairSvg(fx, fy, tx, ty, side, forward) {
+    const dx = tx - fx;
+    const dy = ty - fy;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const px = -uy;
+    const py = ux;
+    // 所有部队位移对照线一律绘制明确运动方向箭头（非预演模式略微内缩 7px 避开兵牌落脚圆环，并在中段加绘方向导引箭标）
+    const endBack = forward ? 0 : Math.min(8, len * 0.16);
+    const tipX = tx - ux * endBack;
+    const tipY = ty - uy * endBack;
+    const ax1 = tipX - ux * 9.5 + px * 4.8;
+    const ay1 = tipY - uy * 9.5 + py * 4.8;
+    const ax2 = tipX - ux * 9.5 - px * 4.8;
+    const ay2 = tipY - uy * 9.5 - py * 4.8;
+
     let svg = `<circle class="compare-ghost-dot side-${side}" cx="${fx.toFixed(1)}" cy="${fy.toFixed(1)}" r="4.5" />`;
-    svg += `<line class="compare-ghost-line side-${side}" x1="${fx.toFixed(1)}" y1="${fy.toFixed(1)}" x2="${tx.toFixed(1)}" y2="${ty.toFixed(1)}" />`;
-    if (forward) {
-      const dx = tx - fx;
-      const dy = ty - fy;
-      const len = Math.hypot(dx, dy) || 1;
-      const ux = dx / len;
-      const uy = dy / len;
-      const px = -uy;
-      const py = ux;
-      const ax1 = tx - ux * 9 + px * 4.5;
-      const ay1 = ty - uy * 9 + py * 4.5;
-      const ax2 = tx - ux * 9 - px * 4.5;
-      const ay2 = ty - uy * 9 - py * 4.5;
-      svg += `<circle class="compare-target-ring side-${side}" cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="6.2" />`;
-      svg += `<polygon class="compare-target-head side-${side}" points="${tx.toFixed(1)},${ty.toFixed(1)} ${ax1.toFixed(1)},${ay1.toFixed(1)} ${ax2.toFixed(1)},${ay2.toFixed(1)}" />`;
+    svg += `<line class="compare-ghost-line side-${side}" x1="${fx.toFixed(1)}" y1="${fy.toFixed(1)}" x2="${tipX.toFixed(1)}" y2="${tipY.toFixed(1)}" />`;
+    if (len > 36) {
+      const mx = fx + dx * 0.52;
+      const my = fy + dy * 0.52;
+      const m1x = mx - ux * 6.5 + px * 3.8;
+      const m1y = my - uy * 6.5 + py * 3.8;
+      const m2x = mx - ux * 6.5 - px * 3.8;
+      const m2y = my - uy * 6.5 - py * 3.8;
+      svg += `<polyline class="compare-mid-chevron side-${side}" points="${m1x.toFixed(1)},${m1y.toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)} ${m2x.toFixed(1)},${m2y.toFixed(1)}" />`;
     }
+    if (forward) {
+      svg += `<circle class="compare-target-ring side-${side}" cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="6.2" />`;
+    }
+    svg += `<polygon class="compare-target-head side-${side}" points="${tipX.toFixed(1)},${tipY.toFixed(1)} ${ax1.toFixed(1)},${ay1.toFixed(1)} ${ax2.toFixed(1)},${ay2.toFixed(1)}" />`;
     return svg;
   }
 
@@ -2300,7 +2316,7 @@ export class MapRenderer {
           const cls = idx === k ? "route-turn-active" : "route-turn-past";
           (tObj.redSlices || []).forEach(({ points }) => {
             if (points && points.length >= 2) {
-              parts.push(`<path class="${cls}" d="${toPathD(points)}" />`);
+              parts.push(`<path class="${cls}" d="${toPathD(points)}" marker-end="url(#arrow-red)" />`);
             }
           });
         });
@@ -2374,27 +2390,28 @@ export class MapRenderer {
         routeSpecs.push({
           points: pts,
           color: theme.accentBright || theme.accent || "#e2513f",
-          width: 0.011,
-          hover: 0.014,
-          alpha: 0.16,
-          dashScale: 4.0,
+          width: 0.012,
+          hover: 0.015,
+          alpha: 0.24,
+          dashScale: 6.5,
           speed: 0,
-          arrow: false,
+          arrow: true,
           animateDraw: false,
           side: "red"
         });
       });
     });
 
+    const blueRouteCol = theme.opposingArrow || "#6ec2ee";
     if (isAll) {
       redSubpaths.forEach((pts) => {
         routeSpecs.push({
           points: pts,
           color: theme.accentBright || theme.accent || "#e2513f",
           width: 0.025,
-          hover: 0.025,
-          alpha: 0.94,
-          dashScale: 7.0,
+          hover: 0.026,
+          alpha: 0.96,
+          dashScale: 8.5,
           speed: 1.5,
           arrow: true,
           animateDraw: true,
@@ -2405,12 +2422,12 @@ export class MapRenderer {
       enemySubpaths.forEach(({ points }) => {
         routeSpecs.push({
           points,
-          color: theme.opposing || "#7ba5b8",
-          width: 0.015,
-          hover: 0.02,
-          alpha: 0.72,
-          dashScale: 8.2,
-          speed: 1.2,
+          color: blueRouteCol,
+          width: 0.019,
+          hover: 0.022,
+          alpha: 0.88,
+          dashScale: 9.0,
+          speed: 1.3,
           arrow: true,
           animateDraw: true,
           side: "blue"
@@ -2426,10 +2443,10 @@ export class MapRenderer {
           routeSpecs.push({
             points,
             color: theme.accentBright || theme.accent || "#e2513f",
-            width: isCurrent ? 0.028 : 0.015,
-            hover: isCurrent ? 0.027 : 0.018,
-            alpha: isCurrent ? 0.98 : 0.28,
-            dashScale: isCurrent ? 7.2 : 5.0,
+            width: isCurrent ? 0.027 : 0.017,
+            hover: isCurrent ? 0.027 : 0.019,
+            alpha: isCurrent ? 0.98 : 0.46,
+            dashScale: isCurrent ? 8.5 : 7.5,
             speed: isCurrent ? 1.7 : 0,
             arrow: true,
             animateDraw: isCurrent,
@@ -2443,11 +2460,11 @@ export class MapRenderer {
           if (!eObj) return;
           routeSpecs.push({
             points: eObj.points,
-            color: theme.opposing || "#7ba5b8",
-            width: isCurrent ? 0.022 : 0.013,
-            hover: isCurrent ? 0.024 : 0.017,
-            alpha: isCurrent ? 0.94 : 0.25,
-            dashScale: isCurrent ? 8.0 : 5.5,
+            color: blueRouteCol,
+            width: isCurrent ? 0.022 : 0.015,
+            hover: isCurrent ? 0.024 : 0.018,
+            alpha: isCurrent ? 0.95 : 0.42,
+            dashScale: isCurrent ? 9.0 : 7.8,
             speed: isCurrent ? 1.55 : 0,
             arrow: true,
             animateDraw: isCurrent,
@@ -2562,7 +2579,7 @@ export class MapRenderer {
         el.innerHTML =
           side === "red"
             ? `<span class="gl-mover-badge">${get3DUnitIconSvg(primaryKind)}</span>`
-            : `<span class="gl-mover-dot"></span>`;
+            : `<span class="gl-mover-arrow"><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M2.5 3.2L15.8 9L2.5 14.8L5.6 9Z" fill="currentColor"/></svg></span>`;
         this.glMoversEl.append(el);
         this.glMovers.push({ el, points, side, singlePass, speed: side === "red" ? 0.14 : 0.16 });
       });
@@ -3012,7 +3029,7 @@ export class MapRenderer {
         u.el.style.visibility = p.visible ? "visible" : "hidden";
       }
 
-      // 投影当前回合活跃路线上的单程先锋行军图标（精准骑在生长箭头最前端！）
+      // 投影当前回合活跃路线上的先锋行军图标（推进至终点箭簇前自动淡出让位，绝不遮挡路线末端 3D 大箭头！）
       if (!this.prefersReducedMotion) {
         const rawProg = Math.min(1, turnElapsed / 1.15);
         const easedProg = 1 - Math.pow(1 - rawProg, 3);
@@ -3021,14 +3038,29 @@ export class MapRenderer {
             m.el.style.visibility = "hidden";
             continue;
           }
-          const tPos = m.singlePass ? easedProg : (elapsed * m.speed) % 1;
+          const loopFrac = (elapsed * m.speed) % 1;
+          const tPos = m.singlePass ? easedProg : 0.04 + loopFrac * 0.80;
           const [mx, my] = this.samplePolylineAt(m.points, tPos);
+          const [nx, ny] = this.samplePolylineAt(m.points, Math.min(1, tPos + 0.035));
+          const [px, py] = this.samplePolylineAt(m.points, Math.max(0, tPos - 0.035));
           const p = this.terrain3d.project(mx, my, m.side === "red" ? 0.042 : 0.032);
-          const edgeFade = m.singlePass ? Math.min(1, tPos * 6) : tPos < 0.08 ? tPos / 0.08 : tPos > 0.92 ? (1 - tPos) / 0.08 : 1;
-          m.el.style.transform = `translate3d(${p.sx.toFixed(1)}px, ${p.sy.toFixed(1)}px, 0)`;
+          const pNext = this.terrain3d.project(nx, ny, 0.032);
+          const pPrev = this.terrain3d.project(px, py, 0.032);
+          const deg = (Math.atan2(pNext.sy - pPrev.sy, pNext.sx - pPrev.sx) * 180) / Math.PI;
+          const edgeFade = m.singlePass
+            ? Math.min(1, tPos * 7) * Math.max(0, Math.min(1, (0.94 - tPos) / 0.16))
+            : loopFrac < 0.10
+              ? loopFrac / 0.10
+              : loopFrac > 0.88
+                ? (1 - loopFrac) / 0.12
+                : 1;
+          m.el.style.transform =
+            m.side === "blue"
+              ? `translate3d(${p.sx.toFixed(1)}px, ${p.sy.toFixed(1)}px, 0) rotate(${deg.toFixed(1)}deg)`
+              : `translate3d(${p.sx.toFixed(1)}px, ${p.sy.toFixed(1)}px, 0)`;
           m.el.style.opacity = String(edgeFade.toFixed(2));
           m.el.style.zIndex = String(Math.round((1 - p.depth) * 1000) + 95);
-          m.el.style.visibility = p.visible ? "visible" : "hidden";
+          m.el.style.visibility = p.visible && edgeFade > 0.02 ? "visible" : "hidden";
         }
       }
 

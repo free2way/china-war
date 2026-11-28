@@ -1802,7 +1802,52 @@ body[data-theme="winter-frost"] .sandtable-bg {
 }
 .gl-mover-arrow svg { width: 18px; height: 18px; }
 
-/* ---------------- 策略游戏地图风格（全面战争 / 文明 / 战棋立体沙盘） ---------------- */
+/* ==========================================================================
+   双风格沙盘系统：
+   1. 经典策略游戏地图风格（data-map-style="game"）——100% 完整保留原版游戏风
+   2. 《文明 5 (Sid Meier's Civilization V)》写实战略沙盘风格（data-map-style="civ5"）
+   ========================================================================== */
+
+/* 顶栏快捷双风格分段切换器（文明5风 | 游戏风） */
+.map-style-seg {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 166, 84, 0.45);
+  background: rgba(12, 15, 19, 0.88);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.40);
+}
+.map-style-seg button {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(241, 236, 224, 0.72);
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.map-style-seg button:hover {
+  color: #fff;
+}
+.map-style-seg button.is-active {
+  background: linear-gradient(180deg, #ebd082 0%, #b88f3c 100%);
+  color: #161004;
+  box-shadow: 0 2px 8px rgba(201, 166, 84, 0.35);
+}
+
+/* 默认隐藏文明5专属挂件，确保「游戏风」100% 还原原版视觉 */
+.c5-city-pop,
+.c5-city-def,
+.c5-medallion-wrap {
+  display: none;
+}
+
+/* ================ 分支一：原版经典「游戏风 (data-map-style="game")」完整保留 ================ */
 .map-stage[data-map-style="game"] {
   background:
     radial-gradient(85% 65% at 50% 18%, rgba(124, 178, 224, .26), transparent 64%),
@@ -1875,7 +1920,6 @@ body[data-theme="sinai-desert-ochre"] .map-stage[data-map-style="game"] {
     0 8px 18px rgba(0,0,0,.58),
     0 0 12px rgba(102, 166, 214, .36);
 }
-/* 迷你游戏动态兵力/士气状态条（随战损与受围动态变化） */
 .map-stage[data-map-style="game"] .gl-unit-card::after {
   content: "";
   position: absolute;
@@ -1889,7 +1933,6 @@ body[data-theme="sinai-desert-ochre"] .map-stage[data-map-style="game"] {
 .map-stage[data-map-style="game"] .gl-unit.side-blue .gl-unit-card::after {
   background: linear-gradient(90deg, #7be0ff 0%, #4b9ae0 var(--hp, 82%), rgba(0,0,0,.55) var(--hp, 82%));
 }
-/* 遭重创/被围/溃散部队闪烁危急边框 */
 .map-stage[data-map-style="game"] .gl-unit.is-critical .gl-unit-card {
   border-color: #ff6b4a;
   box-shadow: 0 0 16px rgba(255, 78, 42, .65), 0 6px 16px rgba(0,0,0,.6);
@@ -1922,8 +1965,6 @@ body[data-theme="sinai-desert-ochre"] .map-stage[data-map-style="game"] {
   border-color: #b4dcfa;
   box-shadow: 0 0 12px var(--opposing);
 }
-
-/* 游戏风：高亮金边战事图标 */
 .map-stage[data-map-style="game"] .gl-marker-orb {
   width: 29px;
   height: 29px;
@@ -1937,248 +1978,304 @@ body[data-theme="sinai-desert-ochre"] .map-stage[data-map-style="game"] {
   box-shadow: 0 6px 18px rgba(0,0,0,.55), 0 0 22px var(--accent-bright);
 }
 
-/* 默认隐藏三国专属挂件，确保其余五场战役 100% 保持原貌 */
-.gl-sanguo-pennant,
-.gl-sanguo-seal {
-  display: none;
-}
-
-/* ================ 四渡赤水专属：三国志策略沙盘风格 (data-map-style="sanguo") ================ */
-.map-stage[data-map-style="sanguo"] {
-  background:
-    radial-gradient(86% 62% at 50% 14%, rgba(218, 174, 96, .24), transparent 64%),
-    radial-gradient(64% 52% at 50% 86%, rgba(46, 88, 68, .22), transparent 72%),
-    linear-gradient(180deg, #211b13 0%, #16130e 58%, #0d0b08 100%);
-  border: 1.5px solid rgba(218, 176, 98, .54);
+/* ================ 分支二：《文明 5 (Civilization V)》写实六角云海沙盘风格 (data-map-style="civ5") ================ */
+.map-stage[data-map-style="civ5"] {
+  border: 1.5px solid #c9a654;
+  border-radius: 6px;
+  background: radial-gradient(82% 76% at 50% 46%, #dde3e8 0%, #bfc8d1 68%, #98a4b0 100%);
   box-shadow:
-    inset 0 0 0 3px rgba(18, 14, 10, .86),
-    inset 0 0 0 4px rgba(214, 172, 92, .24),
-    inset 0 0 84px rgba(8, 6, 4, .65),
-    0 36px 90px rgba(0,0,0,.58);
+    inset 0 0 0 2px #0d1116,
+    inset 0 0 0 3px rgba(201, 166, 84, 0.34),
+    0 32px 84px rgba(0, 0, 0, 0.52);
 }
-
-/* 沙盘四角青铜错金回纹护角 */
-.map-stage[data-map-style="sanguo"] .stage-reticle span {
-  width: 22px;
-  height: 22px;
-  border-color: rgba(226, 184, 102, .72);
-  border-width: 2px;
-}
-
-/* 2D 平面在三国模式下同步化作古绢舆图 */
-.map-stage[data-map-style="sanguo"].is-2d {
+.map-stage[data-map-style="civ5"].is-clouds-off {
   background:
-    radial-gradient(75% 65% at 50% 45%, rgba(232, 214, 176, .12), transparent 75%),
-    linear-gradient(180deg, #241e15 0%, #1a150f 100%);
+    radial-gradient(80% 65% at 50% 24%, rgba(112, 156, 192, 0.28), transparent 68%),
+    linear-gradient(180deg, #1b2530 0%, #121820 62%, #0c1015 100%);
 }
-.map-stage[data-map-style="sanguo"] .region-labels text {
-  fill: rgba(234, 206, 148, .12);
-  font-weight: 700;
+.map-stage[data-map-style="civ5"] .stage-reticle span {
+  width: 18px;
+  height: 18px;
+  border-color: rgba(201, 166, 84, 0.72);
+}
+.map-stage[data-map-style="civ5"] .map-style-seg {
+  border-radius: 3px;
+  border-color: #c9a654;
+}
+.map-stage[data-map-style="civ5"] .map-style-seg button {
+  border-radius: 2px;
 }
 
-/* 三国城池 / 雄关 / 古渡：乌木金边官印牌匾（城 / 关 / 渡） */
-.map-stage[data-map-style="sanguo"] .gl-landmark.is-major {
-  padding: 2px 9px 2px 3px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, rgba(30, 22, 15, .94), rgba(15, 11, 8, .96));
-  border: 1px solid rgba(218, 176, 96, .66);
-  box-shadow: 0 5px 14px rgba(0,0,0,.65), inset 0 1px 0 rgba(255, 236, 190, .22);
+/* Art Deco 黑曜石双金线面板（仅在文明5风格下激活） */
+.map-stage[data-map-style="civ5"] .live-commentary {
+  border-radius: 4px;
+  border: 1px solid #c9a654;
+  background: rgba(14, 18, 22, 0.92);
+  box-shadow:
+    inset 0 0 0 2px #0a0d11,
+    inset 0 0 0 3px rgba(201, 166, 84, 0.22),
+    0 16px 38px rgba(0, 0, 0, 0.52);
 }
-.map-stage[data-map-style="sanguo"] .gl-landmark.is-major .gl-landmark-icon {
+.map-stage[data-map-style="civ5"] .live-cast-head {
+  background: linear-gradient(90deg, rgba(201, 166, 84, 0.16), transparent);
+  border-bottom: 1px solid rgba(201, 166, 84, 0.38);
+}
+.map-stage[data-map-style="civ5"] .live-cast-head strong {
+  font-family: var(--serif);
+  color: #ead084;
+}
+.map-stage[data-map-style="civ5"] .map-action-pill {
+  border-radius: 3px;
+  border: 1px solid rgba(201, 166, 84, 0.52);
+  background: rgba(15, 19, 24, 0.90);
+  color: #f1ece0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.38);
+}
+.map-stage[data-map-style="civ5"] .map-action-pill:hover {
+  background: rgba(30, 36, 44, 0.95);
+  border-color: #ead084;
+}
+.map-stage[data-map-style="civ5"] .map-action-pill.is-active {
+  background: linear-gradient(180deg, #2d3742 0%, #181f27 100%);
+  border-color: #ead084;
+  color: #ead084;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 240, 195, 0.18);
+}
+.map-stage[data-map-style="civ5"] .map-settings-panel {
+  border-radius: 4px;
+  border: 1px solid #c9a654;
+  background: rgba(13, 17, 21, 0.96);
+  box-shadow:
+    inset 0 0 0 2px #090c0f,
+    inset 0 0 0 3px rgba(201, 166, 84, 0.22),
+    0 24px 56px rgba(0, 0, 0, 0.6);
+}
+.map-stage[data-map-style="civ5"] .hud-env-badge {
+  border-radius: 3px;
+  border: 1px solid rgba(201, 166, 84, 0.48);
+  background: rgba(14, 18, 22, 0.88);
+  color: #f1ece0;
+}
+.map-stage[data-map-style="civ5"] .hud-compass {
+  border: 1.5px solid #c9a654;
+  background: radial-gradient(circle, #222932 0%, #0e1216 100%);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.52);
+}
+.map-stage[data-map-style="civ5"] .hud-momentum,
+.map-stage[data-map-style="civ5"] .turn-sequencer,
+.map-stage[data-map-style="civ5"] .scene-timeline {
+  border-radius: 4px;
+  border: 1px solid rgba(201, 166, 84, 0.62);
+  background: rgba(13, 17, 21, 0.93);
+  box-shadow:
+    inset 0 0 0 1.5px #090c0f,
+    0 10px 28px rgba(0, 0, 0, 0.50);
+}
+.map-stage[data-map-style="civ5"] .turn-play-btn {
+  background: linear-gradient(180deg, #ebd082 0%, #b38936 100%);
+  border-color: #fff0be;
+  color: #171104;
+}
+.map-stage[data-map-style="civ5"] .cinematic-banner {
+  border-radius: 4px;
+  border: 1px solid #ead084;
+  background: rgba(12, 15, 19, 0.95);
+  box-shadow:
+    inset 0 0 0 2px #090c10,
+    inset 0 0 0 3px rgba(201, 166, 84, 0.30),
+    0 16px 40px rgba(0, 0, 0, 0.60);
+}
+.map-stage[data-map-style="civ5"] .map-tooltip {
+  border-radius: 4px;
+  border: 1px solid #c9a654;
+  border-left: 3px solid #ead084;
+  background: rgba(13, 17, 21, 0.96);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.56);
+}
+
+/* 文明5经典「黑曜石金边圆角城市条 (City Banner)」 */
+.map-stage[data-map-style="civ5"] .gl-landmark {
+  margin-left: 0;
+  margin-top: -10px;
+  padding: 1px 6px;
+}
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major .gl-landmark-icon,
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major .gl-landmark-dot {
   display: none;
 }
-.map-stage[data-map-style="sanguo"] .gl-landmark.is-major .gl-sanguo-seal {
-  display: inline-grid;
-  place-items: center;
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(20, 25, 31, 0.94) 0%, rgba(10, 13, 17, 0.97) 100%);
+  border: 1px solid #c9a654;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition: transform 0.18s ease, border-color 0.2s ease, opacity 0.25s ease;
+}
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major:hover { border-color: #fff0be; }
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major.owner-red { border-color: #e66a5e; }
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major.owner-blue { border-color: #7abaf0; }
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major.is-key,
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major.is-turn-focus {
+  border-color: #ead084;
+  box-shadow: 0 0 0 2px rgba(234, 208, 132, 0.30), 0 6px 16px rgba(0, 0, 0, 0.62);
+}
+.map-stage[data-map-style="civ5"] .c5-city-pop {
   width: 17px;
   height: 17px;
-  border-radius: 2px;
-  font: 700 10.5px/1 var(--serif);
-  color: #fff6e5;
-  background: linear-gradient(180deg, #b83224, #7c1b12);
-  border: 1px solid rgba(246, 208, 132, .78);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: radial-gradient(circle at 35% 30%, #46515c, #1d232a);
+  border: 1px solid #ead084;
+  font: 700 9.5px/1 var(--mono);
+  color: #fff8e4;
+  flex: none;
 }
-.map-stage[data-map-style="sanguo"] .gl-landmark.gl-loc-ford .gl-sanguo-seal {
-  background: linear-gradient(180deg, #2f6c62, #1b423c);
+.map-stage[data-map-style="civ5"] .gl-landmark.owner-red .c5-city-pop {
+  background: radial-gradient(circle at 35% 30%, #d4352b, #6e140e);
 }
-.map-stage[data-map-style="sanguo"] .gl-landmark.gl-loc-fortress .gl-sanguo-seal {
-  background: linear-gradient(180deg, #9c5b1e, #63360d);
+.map-stage[data-map-style="civ5"] .gl-landmark.owner-blue .c5-city-pop {
+  background: radial-gradient(circle at 35% 30%, #3474ad, #163350);
 }
-.map-stage[data-map-style="sanguo"] .gl-landmark.is-major.is-key {
-  background: linear-gradient(180deg, rgba(66, 38, 16, .96), rgba(28, 16, 8, .98));
-  border-color: #f5cd74;
-  box-shadow: 0 6px 16px rgba(0,0,0,.68), 0 0 14px rgba(245, 205, 116, .42);
+.map-stage[data-map-style="civ5"] .gl-landmark.is-civ5-major .gl-landmark-name {
+  font: 600 11.5px/1.1 var(--serif);
+  letter-spacing: 0.05em;
+  color: #fff8ea;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
-.map-stage[data-map-style="sanguo"] .gl-landmark-name {
-  font-family: var(--serif);
-  font-weight: 700;
-  letter-spacing: .08em;
-  color: #f8edd6;
-}
-
-/* 三国战旗立体棋子：红漆描金帅旗 + 迎风燕尾战旗 + 青铜虎符底座 */
-@keyframes sanguo-flag-wave {
-  0%, 100% { transform: perspective(120px) rotateY(0deg) skewY(0deg); }
-  50% { transform: perspective(120px) rotateY(-14deg) skewY(-2.6deg); }
+.map-stage[data-map-style="civ5"] .c5-city-def {
+  display: inline;
+  font: 600 9px/1 var(--mono);
+  color: #ead084;
+  opacity: 0.92;
 }
 
-.map-stage[data-map-style="sanguo"] .gl-unit {
-  margin-top: -66px;
+/* 文明5经典「圆形金属战术兵章 & 倒三角大将军统帅章」 */
+.map-stage[data-map-style="civ5"] .gl-unit {
+  width: auto;
+  margin-left: 0;
+  margin-top: 0;
 }
-.map-stage[data-map-style="sanguo"] .gl-unit-stem {
+.map-stage[data-map-style="civ5"] .gl-unit-stem,
+.map-stage[data-map-style="civ5"] .gl-unit-foot,
+.map-stage[data-map-style="civ5"] .gl-unit-card .gl-unit-badge {
   display: none;
 }
-.map-stage[data-map-style="sanguo"] .gl-sanguo-pennant {
+.map-stage[data-map-style="civ5"] .gl-unit .c5-medallion-wrap {
   position: relative;
-  display: block;
-  width: 40px;
+  width: 38px;
   height: 38px;
-  margin-top: -1px;
-  margin-left: 12px;
-  filter: drop-shadow(0 6px 8px rgba(0,0,0,.68));
-  pointer-events: none;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -82%) translate(var(--card-ox, 0px), var(--card-oy, 0px));
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.56));
+  transition: transform 0.18s var(--ease);
 }
-.map-stage[data-map-style="sanguo"] .gl-sanguo-flag-svg {
-  width: 40px;
-  height: 38px;
-  overflow: visible;
-  transform-origin: 8px 14px;
-  animation: sanguo-flag-wave 2.6s ease-in-out infinite;
+.map-stage[data-map-style="civ5"] .gl-unit.is-command .c5-medallion-wrap {
+  width: 42px;
+  height: 42px;
 }
-.map-stage[data-map-style="sanguo"] .gl-unit:nth-child(even) .gl-sanguo-flag-svg {
-  animation-delay: -1.2s;
-}
-.map-stage[data-map-style="sanguo"] .sg-flag-cloth {
-  fill: #be291e;
-}
-.map-stage[data-map-style="sanguo"] .sg-flag-trim {
-  stroke: #f3cc76;
-}
-.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .sg-flag-cloth {
-  fill: #244866;
-}
-.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .sg-flag-trim {
-  stroke: #b8d6ec;
-}
-.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .sg-flag-pole {
-  stroke: #b6cad8;
-}
-.map-stage[data-map-style="sanguo"] .gl-sanguo-glyph {
+.map-stage[data-map-style="civ5"] .gl-unit .c5-medallion-bg,
+.map-stage[data-map-style="civ5"] .gl-unit .c5-medallion-svg {
   position: absolute;
-  left: 12px;
-  top: 5px;
-  width: 17px;
-  text-align: center;
-  font: 700 11.5px/1 var(--serif);
-  font-style: normal;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.map-stage[data-map-style="civ5"] .gl-unit .c5-medallion-icon {
+  position: relative;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
   color: #fff6dc;
-  text-shadow: 0 1px 3px rgba(0,0,0,.92);
-  animation: sanguo-flag-wave 2.6s ease-in-out infinite;
 }
-.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-sanguo-glyph {
-  color: #eef7ff;
+.map-stage[data-map-style="civ5"] .gl-unit.is-command .c5-medallion-icon {
+  transform: translateY(-3px);
 }
-
-/* 三国战棋青铜圆盘底座 */
-.map-stage[data-map-style="sanguo"] .gl-unit-foot {
-  width: 18px;
-  height: 8px;
-  margin-top: -3px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 35%, #f5cf7b 0%, #a83224 62%, #42120c 100%);
-  border: 1.5px solid #f2ca74;
-  box-shadow: 0 3px 8px rgba(0,0,0,.78), 0 0 12px rgba(226, 81, 63, .48);
+.map-stage[data-map-style="civ5"] .gl-unit .c5-medallion-icon svg {
+  width: 17px;
+  height: 17px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.78));
 }
-.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-unit-foot {
-  background: radial-gradient(circle at 50% 35%, #d6ecfb 0%, #2b5678 62%, #102334 100%);
-  border-color: #aacde6;
-  box-shadow: 0 3px 8px rgba(0,0,0,.78), 0 0 10px rgba(96, 158, 206, .42);
-}
-
-/* 三国木牍金漆番号牌 + 兵力士气槽 */
-.map-stage[data-map-style="sanguo"] .gl-unit-card {
-  position: relative;
-  padding: 3px 9px 6px 4px;
+.map-stage[data-map-style="civ5"] .gl-unit .gl-unit-card {
+  margin-top: 2px;
+  padding: 2px 7px;
+  max-width: 132px;
   border-radius: 3px;
-  background: linear-gradient(180deg, #4b1510 0%, #260a08 100%);
-  border: 1px solid #e6be6c;
-  border-left: 3px solid #f5cf78;
-  box-shadow: 0 8px 18px rgba(0,0,0,.68), inset 0 1px 0 rgba(255, 236, 190, .28);
+  background: rgba(12, 16, 20, 0.92);
+  border: 1px solid rgba(201, 166, 84, 0.62);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
+  transform: translate(-50%, -26px) translate(var(--card-ox, 0px), var(--card-oy, 0px));
 }
-.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-unit-card {
-  background: linear-gradient(180deg, #183247 0%, #0d1c29 100%);
-  border-color: #96bfd9;
-  border-left: 3px solid #cbe4f6;
-  box-shadow: 0 8px 18px rgba(0,0,0,.66), inset 0 1px 0 rgba(214, 238, 255, .24);
+.map-stage[data-map-style="civ5"] .gl-unit.side-blue .gl-unit-card {
+  border-color: rgba(146, 194, 232, 0.65);
 }
-.map-stage[data-map-style="sanguo"] .gl-unit-label {
-  font-family: var(--serif);
-  font-weight: 700;
-  font-size: 10.5px;
-  letter-spacing: .04em;
-  color: #fff5df;
+.map-stage[data-map-style="civ5"] .gl-unit.is-turn-active .c5-medallion-wrap {
+  filter: drop-shadow(0 0 10px rgba(234, 208, 132, 0.72)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.58));
 }
-.map-stage[data-map-style="sanguo"] .gl-unit-badge {
-  width: 19px;
-  height: 19px;
-  border-radius: 2px;
-  border: 1px solid rgba(248, 214, 140, .55);
+.map-stage[data-map-style="civ5"] .gl-unit:hover .c5-medallion-wrap {
+  transform: translate(-50%, -88%) translate(var(--card-ox, 0px), var(--card-oy, 0px)) scale(1.10);
 }
-.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-unit-badge {
-  border-color: rgba(186, 220, 245, .5);
+.map-stage[data-map-style="civ5"] .gl-unit:hover .gl-unit-card {
+  border-color: #fff0be;
+  transform: translate(-50%, -26px) translate(var(--card-ox, 0px), var(--card-oy, 0px)) scale(1.04);
 }
-.map-stage[data-map-style="sanguo"] .gl-unit-card::after {
-  content: "";
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  bottom: 2px;
-  height: 2px;
-  background: linear-gradient(90deg, #f6d078 0%, #df4b38 var(--hp, 84%), rgba(0,0,0,.6) var(--hp, 84%));
+.map-stage[data-map-style="civ5"] .gl-unit.is-breathing-dot .c5-medallion-wrap {
+  transform: translate(-50%, -82%) translate(var(--card-ox, 0px), var(--card-oy, 0px)) scale(0.82);
+  opacity: 0.90;
 }
-.map-stage[data-map-style="sanguo"] .gl-unit.side-blue .gl-unit-card::after {
-  background: linear-gradient(90deg, #9ad8f8 0%, #4b8ec2 var(--hp, 84%), rgba(0,0,0,.6) var(--hp, 84%));
+.map-stage[data-map-style="civ5"] .gl-unit.is-breathing-dot .gl-unit-card {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -22px) translate(var(--card-ox, 0px), var(--card-oy, 0px)) scale(0.85);
 }
-
-/* 非本幕焦点部队：收起顶部文字牌避免遮挡，但保留挺立飘扬的单字战旗棋子！ */
-.map-stage[data-map-style="sanguo"] .gl-unit.is-breathing-dot .gl-sanguo-pennant {
-  transform: scale(.82);
-  transform-origin: 8px 38px;
-  opacity: .9;
-  transition: transform .22s ease, opacity .22s ease;
-}
-.map-stage[data-map-style="sanguo"] .gl-unit.is-breathing-dot:hover .gl-sanguo-pennant,
-.map-stage[data-map-style="sanguo"] .gl-unit.is-breathing-dot:focus-visible .gl-sanguo-pennant,
-.map-stage[data-map-style="sanguo"].is-zoomed-in .gl-unit.is-breathing-dot .gl-sanguo-pennant {
-  transform: scale(1);
+.map-stage[data-map-style="civ5"] .gl-unit.is-breathing-dot:hover .c5-medallion-wrap,
+.map-stage[data-map-style="civ5"].is-zoomed-in .gl-unit.is-breathing-dot .c5-medallion-wrap {
+  transform: translate(-50%, -86%) translate(var(--card-ox, 0px), var(--card-oy, 0px)) scale(1);
   opacity: 1;
 }
-
-/* 三国烽火战事菱形令旗徽章 */
-.map-stage[data-map-style="sanguo"] .gl-marker-orb {
-  width: 26px;
-  height: 26px;
-  border-radius: 4px;
-  transform: rotate(45deg);
-  border: 1.8px solid #f5cf78;
-  background: linear-gradient(135deg, #c93824, #68140c);
-  box-shadow: 0 6px 18px rgba(0,0,0,.7), 0 0 20px rgba(236, 118, 48, .8);
-  animation: none;
-}
-.map-stage[data-map-style="sanguo"] .gl-marker-orb > * {
-  transform: rotate(-45deg);
+.map-stage[data-map-style="civ5"] .gl-unit.is-breathing-dot:hover .gl-unit-card,
+.map-stage[data-map-style="civ5"] .gl-unit.is-breathing-dot:focus-visible .gl-unit-card,
+.map-stage[data-map-style="civ5"].is-zoomed-in .gl-unit.is-breathing-dot .gl-unit-card {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -26px) translate(var(--card-ox, 0px), var(--card-oy, 0px)) scale(1);
 }
 
-/* 三国战报卷轴式过场横幅与实况边框 */
-.map-stage[data-map-style="sanguo"] .live-commentary {
-  background: linear-gradient(180deg, rgba(26, 20, 14, .92), rgba(15, 12, 9, .94));
-  border-color: rgba(218, 176, 98, .44);
+/* 文明5二维战略六角图底盘（仅在文明5风格 2D 模式生效） */
+.map-stage[data-map-style="civ5"].is-2d .sandtable-world .battle-map {
+  background: #dfe5ea;
+  border: 1.5px solid #c9a654;
+  box-shadow: 0 20px 54px rgba(0, 0, 0, 0.35);
 }
-.map-stage[data-map-style="sanguo"] .cinematic-banner {
-  background: linear-gradient(90deg, transparent, rgba(32, 20, 12, .94) 18%, rgba(44, 24, 14, .96) 50%, rgba(32, 20, 12, .94) 82%, transparent);
-  border-top: 1px solid rgba(232, 190, 106, .58);
-  border-bottom: 1px solid rgba(232, 190, 106, .58);
+.map-stage[data-map-style="civ5"].is-2d .loc-label {
+  fill: #181c20;
+  stroke: rgba(245, 247, 250, 0.92);
+  stroke-width: 3.2px;
+  font-weight: 600;
+}
+.map-stage[data-map-style="civ5"].is-2d .location.is-key .loc-label {
+  fill: #7a1812;
+}
+.map-stage[data-map-style="civ5"].is-2d .river-labels text {
+  fill: rgba(28, 42, 54, 0.72);
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  #hex-grid-btn,
+  #cloud-fog-btn {
+    display: none;
+  }
+  .map-style-seg button {
+    padding: 4px 7px;
+    font-size: 10px;
+  }
 }
 .map-frame rect { fill: none; stroke: var(--line-dark); stroke-dasharray: 2 6; }
 

@@ -6,7 +6,7 @@
     <meta name="description" content="战史沙盘：以三维立体交互方式推演古今中外著名战役——四渡赤水、官渡之战、长津湖战役、诺曼底登陆、市场花园行动等。" />
     <meta name="theme-color" content="#121512" />
     <title>战史沙盘｜世界历史著名战役三维交互推演</title>
-    <link rel="stylesheet" href="./styles.css?v=32" />
+    <link rel="stylesheet" href="./styles.css?v=35" />
   </head>
   <body data-view="home">
     <header class="site-header" aria-label="主导航">
@@ -107,7 +107,7 @@
           </aside>
         </div>
 
-        <div class="map-stage is-3d" id="map-stage" data-map-style="game" aria-label="三维动态战役沙盘">
+        <div class="map-stage is-3d" id="map-stage" data-map-style="civ5" aria-label="三维动态战役沙盘">
           <div class="stage-reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
           <div class="stage-spotlight" id="stage-spotlight" aria-hidden="true"></div>
 
@@ -145,6 +145,12 @@
           <div class="map-toolbar">
             <div class="map-toolbar-spacer"></div>
             <div class="map-quick-actions">
+              <div class="map-style-seg" role="group" aria-label="沙盘画风切换">
+                <button type="button" class="is-active" data-style-choice="civ5" data-i18n="btnStyleCiv5" title="《文明5》写实六角网与云海迷雾风格">文明5风</button>
+                <button type="button" data-style-choice="game" data-i18n="btnStyleGame" title="经典策略游戏沙盘风格">游戏风</button>
+              </div>
+              <button type="button" class="map-action-pill is-active" id="hex-grid-btn" data-cam-action="toggle-hex" aria-pressed="true" data-i18n="btnHexGrid" title="开关文明5贴地六角网格">⬡ 六角网</button>
+              <button type="button" class="map-action-pill is-active" id="cloud-fog-btn" data-cam-action="toggle-clouds" aria-pressed="true" data-i18n="btnCloudFog" title="开关文明5外围立体白银云海迷雾">☁ 云海迷雾</button>
               <button type="button" class="map-action-pill" id="share-scene-btn" data-i18n-title="shareTitle" title="复制当前一幕的直达链接">
                 <span aria-hidden="true">🔗</span><span data-i18n="shareBtn">分享</span>
               </button>
@@ -156,10 +162,10 @@
                     <span class="settings-label" data-i18n="settingsGroupView">视角与风格</span>
                     <div class="map-view-controls" role="group" aria-label="三维视角控制">
                       <button type="button" class="is-active" data-view-mode="3d" data-i18n="btn3d" data-i18n-title="btn3dTitle" title="三维立体起伏地形">3D 沙盘</button>
-                      <button type="button" data-view-mode="2d" data-i18n="btn2d" data-i18n-title="btn2dTitle" title="二维平面地图">2D 平面</button>
+                      <button type="button" data-view-mode="2d" data-i18n="btn2d" data-i18n-title="btn2dTitle" title="二维战略地图">2D 六角图</button>
                       <button type="button" data-cam-action="low-fly" data-i18n="btnLowFly" data-i18n-title="btnLowFlyTitle" title="低空临境观察山势">低空</button>
                       <button type="button" class="is-active" data-cam-action="auto-cam" aria-pressed="true" data-i18n="btnAutoCam" data-i18n-title="btnAutoCamTitle" title="切换阶段时电影运镜自动聚焦战区">运镜</button>
-                      <button type="button" class="is-active" data-cam-action="toggle-style" aria-pressed="true" data-i18n-title="btnStyleTitle" title="切换策略游戏地图风 / 写实纪录片风">游戏风</button>
+                      <button type="button" class="is-active" data-cam-action="toggle-style" aria-pressed="true" data-i18n-title="btnStyleTitle" title="切换文明5风 / 游戏风">文明5风</button>
                       <button type="button" data-cam-action="zoom-out" aria-label="缩小视角" data-i18n-title="btnZoomOut" title="缩小">−</button>
                       <button type="button" data-cam-action="zoom-in" aria-label="放大视角" data-i18n-title="btnZoomIn" title="放大">＋</button>
                       <button type="button" data-cam-action="reset" aria-label="重置视角" data-i18n-title="btnReset" title="重置视角">↺</button>
@@ -275,6 +281,7 @@
                 <g class="map-frame" aria-hidden="true">
                   <rect x="6" y="6" width="868" height="708" rx="4" />
                 </g>
+                <g id="map-civ5-hexes" class="civ5-hexes-layer" aria-hidden="true"></g>
                 <g id="map-terrain" class="map-terrain"></g>
                 <g id="map-enemy-routes" class="enemy-routes" aria-hidden="true"></g>
                 <g id="map-routes" class="routes" aria-hidden="true"></g>
@@ -451,6 +458,6 @@
       <p data-i18n="footerDisclaimer">地图为战役态势示意，不作精确地理测绘用途。兵力与事件表述依据公开史料概括，存在不同记载处以“约”等限定语标注。</p>
     </footer>
 
-    <script type="module" src="./app.js?v=33"></script>
+    <script type="module" src="./app.js?v=35"></script>
   </body>
 </html>

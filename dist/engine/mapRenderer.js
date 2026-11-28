@@ -2,8 +2,8 @@
 // 支持真实起伏地形与实时软阴影、实体 3D 森林与城池关隘、分时代不同军装 3D 立体小人方阵/骑兵/坦克、
 // 飘扬战旗、三维行军先锋、抛物线炮火/箭雨弹道、点击拾取选中与自由 360° 近景漫游
 
-import { Terrain3DEngine, getBattleEnvLabel } from "./terrain3d.js?v=32";
-import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=25";
+import { Terrain3DEngine, getBattleEnvLabel, CIV5_TERRAIN_INFO } from "./terrain3d.js?v=35";
+import { t, getLang, MARKER_GLYPHS_EN } from "./i18n.js?v=27";
 import { VoiceNarrator } from "./voiceNarrator.js?v=3";
 import { getPhaseTurnScript } from "../data/turnScripts.js?v=2";
 import { makeEventId, getEventMeta, getDefaultPrecision, getPhaseSceneCount } from "../data/eventMeta.js?v=5";
@@ -320,40 +320,49 @@ function get3DLandmarkIconSvg(kind) {
   </svg>`;
 }
 
-// 四渡赤水专属：三国志风格单字书法帅旗/将旗徽记
-const CHISHUI_SANGUO_GLYPHS = {
-  "red-command": "帅",
-  "red-1": "一",
-  "red-3": "三",
-  "red-5": "五",
-  "red-9": "九",
-  "red-decoy": "疑",
-  cadre: "干",
-  sichuan: "川",
-  "central-zhou": "周",
-  "central-wu": "吴",
-  yunnan: "滇",
-  guizhou: "黔"
-};
+function buildCiv5UnitMedallionSvg(side, isCommand, hp = 88) {
+  const uid = `${side}-${isCommand ? "cmd" : "std"}-${Math.round(hp)}`;
+  const cTop = side === "red" ? "#cf2f25" : "#2f6ca3";
+  const cBot = side === "red" ? "#63120c" : "#122b44";
+  const rim = isCommand ? "#f5dc8c" : side === "red" ? "#e6c36e" : "#b8d6ee";
+  const hpCol = hp < 40 ? "#ef5b4c" : hp < 68 ? "#f0be4d" : "#59cc69";
 
-function getSanguoBannerGlyph(unitId, unit) {
-  if (CHISHUI_SANGUO_GLYPHS[unitId]) return CHISHUI_SANGUO_GLYPHS[unitId];
-  const raw = (unit?._rawLabel || unit?.label || "").trim();
-  if (/军委|指挥|总/.test(raw)) return "帅";
-  if (/佯动|疑/.test(raw)) return "疑";
-  const numMatch = raw.match(/([一二三四五六七八九1-9])/);
-  if (numMatch) {
-    const map = { "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "7": "七", "8": "八", "9": "九" };
-    return map[numMatch[1]] || numMatch[1];
+  if (isCommand) {
+    return `<svg class="c5-medallion-svg" viewBox="0 0 46 46" aria-hidden="true">
+      <defs>
+        <linearGradient id="c5g-${uid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${cTop}"/>
+          <stop offset="100%" stop-color="${cBot}"/>
+        </linearGradient>
+      </defs>
+      <polygon points="23,43 4,9 42,9" fill="#0d1115" stroke="${rim}" stroke-width="2.3" stroke-linejoin="round"/>
+      <polygon points="23,38.5 8,11.5 38,11.5" fill="url(#c5g-${uid})" stroke="rgba(255,244,208,0.45)" stroke-width="0.9" stroke-linejoin="round"/>
+    </svg>`;
   }
-  return raw.charAt(0) || (unit?.side === "red" ? "红" : "军");
+  const dash = ((Math.max(15, Math.min(100, hp)) / 100) * 34).toFixed(1);
+  return `<svg class="c5-medallion-svg" viewBox="0 0 44 44" aria-hidden="true">
+    <defs>
+      <radialGradient id="c5r-${uid}" cx="35%" cy="28%" r="72%">
+        <stop offset="0%" stop-color="${cTop}"/>
+        <stop offset="100%" stop-color="${cBot}"/>
+      </radialGradient>
+    </defs>
+    <circle cx="22" cy="22" r="19.5" fill="#0d1115" stroke="${rim}" stroke-width="2.1"/>
+    <circle cx="22" cy="22" r="16.2" fill="url(#c5r-${uid})" stroke="rgba(255,245,215,0.34)" stroke-width="0.9"/>
+    <path d="M 35.8 11.2 A 17.6 17.6 0 0 1 35.8 32.8" fill="none" stroke="rgba(0,0,0,0.68)" stroke-width="2.8" stroke-linecap="round"/>
+    <path d="M 35.8 11.2 A 17.6 17.6 0 0 1 35.8 32.8" fill="none" stroke="${hpCol}" stroke-width="2.2" stroke-dasharray="${dash} 40" stroke-linecap="round"/>
+  </svg>`;
 }
 
-function getSanguoLandmarkSeal(kind) {
-  if (kind === "fortress") return "关";
-  if (kind === "ford") return "渡";
-  if (kind === "capital" || kind === "city") return "城";
-  return "";
+function estimateCityStats(loc, idx = 0) {
+  const kind = loc.kind || "";
+  if (kind === "capital") return { pop: 13 + (idx % 3), def: "40" };
+  if (kind === "city") return { pop: 8 + (idx % 4), def: "28" };
+  if (kind === "port") return { pop: 9 + (idx % 3), def: "30" };
+  if (kind === "fortress") return { pop: 5 + (idx % 2), def: "36" };
+  if (kind === "bridge") return { pop: 4, def: "24" };
+  if (kind === "ford" || kind === "beach") return { pop: 4, def: "" };
+  return { pop: 3, def: "" };
 }
 
 export class MapRenderer {
@@ -438,6 +447,7 @@ export class MapRenderer {
 
     // 3D 立体相机状态（默认开启 3D 立体起伏地形 + 纪录片智能聚焦运镜）
     this.viewMode = "3d";
+    this.mapStyle = "civ5"; // "civ5"（文明5风） | "game"（经典游戏风）
     this.autoCamera = true;
     this.cam = { ...DEFAULT_CAM_3D };
     this.glCam = { ...DEFAULT_CAM_3D };
@@ -477,6 +487,13 @@ export class MapRenderer {
     this.stageEl.querySelectorAll("[data-view-mode]").forEach((btn) => {
       btn.addEventListener("click", () => this.setViewMode(btn.dataset.viewMode));
     });
+    this.stageEl.querySelectorAll("[data-style-choice]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const next = btn.dataset.styleChoice === "game" ? "game" : "civ5";
+        this.applyMapStyle(next, { rebuildFortresses: true });
+        this.sync2DCiv5Hexes();
+      });
+    });
     this.stageEl.querySelectorAll("[data-cam-action]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const action = btn.dataset.camAction;
@@ -498,9 +515,21 @@ export class MapRenderer {
             this.focusCameraOnPhase(this.battle.phases[this.currentPhase], this.currentPhase);
           }
         } else if (action === "toggle-style") {
-          const cur = this.stageEl.dataset.mapStyle || "game";
-          const next = cur === "realistic" ? "game" : "realistic";
-          this.applyMapStyle(next);
+          const cur = this.stageEl.dataset.mapStyle || "civ5";
+          const next = cur === "civ5" ? "game" : "civ5";
+          this.applyMapStyle(next, { rebuildFortresses: true });
+          this.sync2DCiv5Hexes();
+        } else if (action === "toggle-hex") {
+          this.terrain3d.showHex = !this.terrain3d.showHex;
+          btn.classList.toggle("is-active", this.terrain3d.showHex);
+          btn.setAttribute("aria-pressed", String(this.terrain3d.showHex));
+          this.sync2DCiv5Hexes();
+        } else if (action === "toggle-clouds") {
+          this.terrain3d.showClouds = !this.terrain3d.showClouds;
+          btn.classList.toggle("is-active", this.terrain3d.showClouds);
+          btn.setAttribute("aria-pressed", String(this.terrain3d.showClouds));
+          this.stageEl.classList.toggle("is-clouds-off", !this.terrain3d.showClouds);
+          this.sync2DCiv5Hexes();
         } else if (action === "reset") {
           this.cam = this.viewMode === "3d" ? { ...DEFAULT_CAM_3D } : { ...DEFAULT_CAM_2D };
           this.applyCamera();
@@ -519,7 +548,7 @@ export class MapRenderer {
 
     if (!this.viewportEl) return;
 
-    // 指针拖拽旋转/倾斜/平移（支持在任意位置起手拖拽，超过 5px 判定为拖拽不误触点击）
+    // 指针拖拽旋转/倾斜/平移 + 点击检视文明5三维六角格地形属性
     this.viewportEl.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
       this.dragState = {
@@ -551,7 +580,6 @@ export class MapRenderer {
         this.cam.panX = Math.max(-240, Math.min(240, this.dragState.startPanX + dx));
         this.cam.panY = Math.max(-200, Math.min(200, this.dragState.startPanY + dy));
       } else if (this.terrain3d.ready) {
-        // WebGL 真三维模式支持 360° 自由环绕与低空俯仰
         this.cam.yaw = this.dragState.startYaw - dx * 0.34;
         this.cam.pitch = Math.max(16, Math.min(78, this.dragState.startPitch + dy * 0.24));
       } else {
@@ -563,11 +591,46 @@ export class MapRenderer {
 
     const endDrag = (e) => {
       if (!this.dragState || e.pointerId !== this.dragState.pointerId) return;
+      const wasMoved = this.dragState.moved;
       this.viewportEl.classList.remove("is-dragging");
       try {
         this.viewportEl.releasePointerCapture(e.pointerId);
       } catch (_) {}
       this.dragState = null;
+
+      if (
+        !wasMoved &&
+        e.type === "pointerup" &&
+        this.mapStyle === "civ5" &&
+        !e.target.closest("button, .location, .formation, .battle-marker")
+      ) {
+        if (this.viewMode === "3d" && this.terrain3d.ready) {
+          const rect = this.viewportEl.getBoundingClientRect();
+          const tile = this.terrain3d.pickHexAtScreen(e.clientX - rect.left, e.clientY - rect.top);
+          if (tile) {
+            this.terrain3d.selectedHex = tile;
+            const info = (CIV5_TERRAIN_INFO[tile.kind] || CIV5_TERRAIN_INFO.grass)[getLang()];
+            this.showTooltip(e, {
+              kicker: `${t("hexTileKicker")} · (${tile.col}, ${tile.row})`,
+              title: tile.loc ? `${tile.loc.name} · ${info.name}` : info.name,
+              body: `${info.combat} · ${info.move}`
+            });
+          }
+        } else if (this.viewMode === "2d") {
+          const poly = e.target.closest("[data-civ5-hex]");
+          if (poly) {
+            const tile = this.terrain3d.hexTiles.find((h) => h.id === poly.getAttribute("data-civ5-hex"));
+            if (tile) {
+              const info = (CIV5_TERRAIN_INFO[tile.kind] || CIV5_TERRAIN_INFO.grass)[getLang()];
+              this.showTooltip(e, {
+                kicker: `${t("hexTileKicker")} · (${tile.col}, ${tile.row})`,
+                title: tile.loc ? `${tile.loc.name} · ${info.name}` : info.name,
+                body: `${info.combat} · ${info.move}`
+              });
+            }
+          }
+        }
+      }
     };
     this.viewportEl.addEventListener("pointerup", endDrag);
     this.viewportEl.addEventListener("pointercancel", endDrag);
@@ -786,28 +849,53 @@ export class MapRenderer {
   }
 
   applyMapStyle(style, { rebuildFortresses = false } = {}) {
-    const next = style === "sanguo" || style === "realistic" ? style : "game";
+    const next = style === "game" ? "game" : "civ5";
+    this.mapStyle = next;
     this.stageEl.dataset.mapStyle = next;
     this.terrain3d.setRenderStyle(next);
+    if (next === "game") {
+      this.terrain3d.selectedHex = null;
+    }
+    this.stageEl.classList.toggle("is-clouds-off", next === "civ5" && !this.terrain3d.showClouds);
     if (rebuildFortresses && this.terrain3d.ready && this.battle) {
       this.terrain3d.buildFortresses(this.battle.mapConfig?.locations || []);
     }
+    this.stageEl.querySelectorAll("[data-style-choice]").forEach((b) => {
+      b.classList.toggle("is-active", b.dataset.styleChoice === next);
+      b.textContent = b.dataset.styleChoice === "game" ? t("btnStyleGame") : t("btnStyleCiv5");
+    });
     const styleBtn = this.stageEl.querySelector('[data-cam-action="toggle-style"]');
     if (styleBtn) {
-      const active = next !== "realistic";
-      styleBtn.classList.toggle("is-active", active);
-      styleBtn.setAttribute("aria-pressed", String(active));
-      styleBtn.textContent =
-        next === "sanguo"
-          ? t("btnStyleSanguo")
-          : next === "game"
-            ? t("btnStyleGame")
-            : t("btnStyleRealistic");
+      styleBtn.classList.add("is-active");
+      styleBtn.setAttribute("aria-pressed", String(next === "civ5"));
+      styleBtn.textContent = next === "civ5" ? t("btnStyleCiv5") : t("btnStyleGame");
+    }
+    const btn2d = this.stageEl.querySelector('[data-view-mode="2d"]');
+    if (btn2d) {
+      btn2d.textContent = next === "civ5" ? t("btn2d") : t("btn2dGame");
+    }
+    const hexBtn = this.stageEl.querySelector("#hex-grid-btn");
+    if (hexBtn) {
+      hexBtn.hidden = next !== "civ5";
+      hexBtn.classList.toggle("is-active", this.terrain3d.showHex);
+      hexBtn.setAttribute("aria-pressed", String(this.terrain3d.showHex));
+    }
+    const cloudBtn = this.stageEl.querySelector("#cloud-fog-btn");
+    if (cloudBtn) {
+      cloudBtn.hidden = next !== "civ5";
+      cloudBtn.classList.toggle("is-active", this.terrain3d.showClouds);
+      cloudBtn.setAttribute("aria-pressed", String(this.terrain3d.showClouds));
     }
   }
 
+  sync2DCiv5Hexes() {
+    const hexLayer = this.svgEl?.querySelector("#map-civ5-hexes");
+    if (!hexLayer || !this.terrain3d.ready) return;
+    hexLayer.innerHTML = this.terrain3d.build2DStrategicHexSvg();
+  }
+
   refreshLanguage() {
-    this.applyMapStyle(this.stageEl.dataset.mapStyle || "game");
+    this.applyMapStyle(this.mapStyle || "civ5");
     const expandBtn = this.stageEl.querySelector("#stage-expand-btn");
     if (expandBtn) {
       const expanded = this.stageEl.closest(".sandtable")?.classList.contains("is-expanded");
@@ -840,8 +928,8 @@ export class MapRenderer {
     this.phaseRenderedIndex = -1;
     this.forceFilter = "all";
     this.activeComparePairs = [];
-    // 保持全应用统一的沙盘界面、兵牌与地标样式（四渡赤水仅在底层 3D 山川水系采用定制喀斯特林山地貌）
-    this.applyMapStyle("game");
+    // 切换战役时保留用户当前选中的风格（文明5风 / 原版游戏风）
+    this.applyMapStyle(this.mapStyle || "civ5");
     if (this.glCompareSvgEl) {
       this.glCompareSvgEl.innerHTML = "";
       this._glCompareEmpty = true;
@@ -1561,33 +1649,49 @@ export class MapRenderer {
     this.glLandmarksEl.innerHTML = "";
     this.glLandmarks = [];
     const isChishui = this.battle?.id === "chishui-1935";
-    locations.forEach((loc) => {
-      const isMajor =
+    locations.forEach((loc, idx) => {
+      const isCiv5Major =
+        loc.kind === "capital" ||
+        loc.kind === "city" ||
+        loc.kind === "fortress" ||
+        loc.kind === "ford" ||
+        loc.kind === "bridge" ||
+        loc.kind === "port" ||
+        loc.kind === "beach";
+      const isGameMajor =
         loc.kind === "capital" ||
         loc.kind === "fortress" ||
         loc.kind === "ford" ||
         (isChishui && loc.kind === "city");
-      const sealChar = getSanguoLandmarkSeal(loc.kind);
+      const stats = estimateCityStats(loc, idx);
       const el = document.createElement("button");
       el.type = "button";
-      el.className = `gl-landmark ${loc.kind ? `gl-loc-${loc.kind}` : ""} ${isMajor ? "is-major" : ""}`;
+      el.className = `gl-landmark ${loc.kind ? `gl-loc-${loc.kind}` : ""}${isCiv5Major ? " is-civ5-major" : ""}${
+        isGameMajor ? " is-major" : ""
+      }`;
       el.dataset.place = loc.name;
       el.setAttribute("aria-label", `${loc.name}${loc.sub ? `：${loc.sub}` : ""}`);
       el.innerHTML = `
         ${
-          isMajor
-            ? `<span class="gl-landmark-icon">${get3DLandmarkIconSvg(loc.kind)}</span>${
-                sealChar ? `<span class="gl-sanguo-seal" aria-hidden="true">${sealChar}</span>` : ""
-              }`
+          isGameMajor
+            ? `<span class="gl-landmark-icon">${get3DLandmarkIconSvg(loc.kind)}</span>`
             : `<span class="gl-landmark-dot"></span>`
         }
+        ${isCiv5Major ? `<span class="c5-city-pop">${stats.pop}</span>` : ""}
         <span class="gl-landmark-name">${loc.name}</span>
+        ${isCiv5Major && stats.def ? `<span class="c5-city-def">🛡${stats.def}</span>` : ""}
       `;
       const showInfo = (event) => {
+        const inCiv5 = this.mapStyle === "civ5";
+        if (inCiv5 && event.type === "click" && this.terrain3d.ready) {
+          this.terrain3d.selectedHex = this.terrain3d.findHexAtMap(loc.x, loc.y);
+        }
+        const tile = inCiv5 && this.terrain3d.ready ? this.terrain3d.findHexAtMap(loc.x, loc.y) : null;
+        const tInfo = tile ? (CIV5_TERRAIN_INFO[tile.kind] || CIV5_TERRAIN_INFO.grass)[getLang()] : null;
         this.showTooltip(event, {
           kicker: getLocKicker(loc.kind),
           title: loc.name,
-          body: loc.sub || t("locFallbackBody")
+          body: `${loc.sub || t("locFallbackBody")}${tInfo ? ` · ⬡ ${tInfo.name}（${tInfo.combat}）` : ""}`
         });
       };
       el.addEventListener("mouseenter", showInfo);
@@ -1613,6 +1717,10 @@ export class MapRenderer {
       el.style.opacity = "0";
       el.style.pointerEvents = "none";
       el.innerHTML = `
+        <span class="c5-medallion-wrap" aria-hidden="true">
+          <span class="c5-medallion-bg"></span>
+          <span class="c5-medallion-icon"></span>
+        </span>
         <span class="gl-unit-card">
           <span class="gl-unit-badge"></span>
           <span class="gl-unit-meta">
@@ -1620,22 +1728,18 @@ export class MapRenderer {
             <small class="gl-unit-sub"></small>
           </span>
         </span>
-        <span class="gl-sanguo-pennant" aria-hidden="true">
-          <svg class="gl-sanguo-flag-svg" viewBox="0 0 42 46">
-            <path class="sg-flag-pole" d="M8 4V45" stroke="#d8b668" stroke-width="2.2" stroke-linecap="round"/>
-            <polygon class="sg-flag-spear" points="8,0 5.2,5.6 10.8,5.6" fill="#f7de94"/>
-            <circle cx="8" cy="6.2" r="2.1" fill="#c93b2b"/>
-            <path class="sg-flag-cloth" d="M9.2 6.2 C18 4.4, 29 8.2, 39.5 6.8 L34.2 15.2 L39.5 23.6 C29 25.0, 18 21.2, 9.2 23.2 Z"/>
-            <path class="sg-flag-trim" d="M9.2 6.2 C18 4.4, 29 8.2, 39.5 6.8 L34.2 15.2 L39.5 23.6 C29 25.0, 18 21.2, 9.2 23.2 Z" fill="none" stroke-width="1.2"/>
-          </svg>
-          <em class="gl-sanguo-glyph"></em>
-        </span>
         <span class="gl-unit-stem"></span>
         <span class="gl-unit-foot"></span>
       `;
       const showInfo = (event) => {
         const unit = this.activeUnitMap.get(id);
         if (!unit) return;
+        const inCiv5 = this.mapStyle === "civ5";
+        if (inCiv5 && event.type === "click" && this.terrain3d.ready) {
+          this.terrain3d.selectedHex = this.terrain3d.findHexAtMap(unit.x, unit.y);
+        }
+        const tile = inCiv5 && this.terrain3d.ready ? this.terrain3d.findHexAtMap(unit.x, unit.y) : null;
+        const tInfo = tile ? (CIV5_TERRAIN_INFO[tile.kind] || CIV5_TERRAIN_INFO.grass)[getLang()] : null;
         const sideName =
           unit.side === "red"
             ? this.battle.mapConfig.filterSides.red
@@ -1643,7 +1747,7 @@ export class MapRenderer {
         this.showTooltip(event, {
           kicker: `${sideName} · ${t("unit3d")}`,
           title: unit.label,
-          body: unit.detail || unit.sub || t("unitFallbackBody")
+          body: `${unit.detail || unit.sub || t("unitFallbackBody")}${tInfo ? ` · ⬡ ${tInfo.name}（${tInfo.move}）` : ""}`
         });
       };
       el.addEventListener("mouseenter", showInfo);
@@ -1670,13 +1774,14 @@ export class MapRenderer {
       if (!unit) {
         item.active = false;
         item.el.style.opacity = "0";
+        item.el.style.visibility = "hidden";
         item.el.style.pointerEvents = "none";
         return;
       }
       const kind = inferUnitKind(unit, this.battle);
+      const isCommand = kind === "command";
       item.active = true;
 
-      // 分步回合模式下，部队从上阶段位置随回合推进平滑行进至本阶段目标点
       const prev = this.prevPhaseCoords.get(id);
       if (!isAll && prev) {
         const moveRatio = 0.25 + 0.75 * stepFrac;
@@ -1693,42 +1798,51 @@ export class MapRenderer {
       }
 
       const statusText = `${unit._rawLabel || unit.label || ""} ${unit._rawSub || unit.sub || ""}`;
-      let hp = 86;
+      let hp = 88;
       let isCritical = false;
       if (/全歼|被焚|溃散|溃众|瓦解|阵亡|被俘|八百骑|残/.test(statusText)) {
-        hp = 22;
+        hp = 24;
         isCritical = true;
       } else if (/被围|激战|血战|阻击|扑空|受阻|撤离|突围|失当|降曹/.test(statusText)) {
-        hp = 52;
+        hp = 56;
         isCritical = /被围|失当/.test(statusText);
       } else if (/主攻|突击|奇袭|斩|胜|追击|精骑/.test(statusText)) {
-        hp = 94;
+        hp = 95;
       }
 
-      // 战术信息按需呼吸：仅本回合核心参战部队展开完整战旗铭牌，其余部队收拢为极简圆点
       const isFocused = focusSet ? focusSet.has(id) : isAll || actor === "clash" || actor === unit.side;
       const isBreathingDot = !isAll && !isFocused;
       const isActing = !isAll && isFocused;
 
       item.el.style.opacity = "1";
+      item.el.style.visibility = "visible";
       item.el.style.pointerEvents = "auto";
       item.el.style.setProperty("--hp", `${hp}%`);
-      item.el.className = `gl-unit side-${unit.side} kind-${kind}${isCritical ? " is-critical" : ""}${
+      item.el.className = `gl-unit side-${unit.side} kind-${kind}${isCommand ? " is-command" : ""}${isCritical ? " is-critical" : ""}${
         isActing ? " is-turn-active" : ""
       }${isBreathingDot ? " is-breathing-dot" : ""}`;
       item.el.classList.toggle("is-muted", this.forceFilter !== "all" && this.forceFilter !== unit.side);
       item.el.setAttribute("aria-label", `${unit.label}${unit.sub ? `：${unit.sub}` : ""}`);
+
+      const medBg = item.el.querySelector(".c5-medallion-bg");
+      const medKey = `${unit.side}-${isCommand ? 1 : 0}-${hp}`;
+      if (medBg && medBg.dataset.medKey !== medKey) {
+        medBg.dataset.medKey = medKey;
+        medBg.innerHTML = buildCiv5UnitMedallionSvg(unit.side, isCommand, hp);
+      }
+      const iconSvg = get3DUnitIconSvg(kind);
+      const medIcon = item.el.querySelector(".c5-medallion-icon");
+      if (medIcon && medIcon.dataset.kind !== kind) {
+        medIcon.dataset.kind = kind;
+        medIcon.innerHTML = iconSvg;
+      }
       const badge = item.el.querySelector(".gl-unit-badge");
       if (badge && badge.dataset.kind !== kind) {
         badge.dataset.kind = kind;
-        badge.innerHTML = get3DUnitIconSvg(kind);
+        badge.innerHTML = iconSvg;
       }
       item.el.querySelector(".gl-unit-label").textContent = unit.label;
       item.el.querySelector(".gl-unit-sub").textContent = unit.sub || "";
-      const sgGlyph = item.el.querySelector(".gl-sanguo-glyph");
-      if (sgGlyph) {
-        sgGlyph.textContent = getSanguoBannerGlyph(id, unit);
-      }
     });
   }
 
@@ -2369,11 +2483,24 @@ export class MapRenderer {
     const redSubpaths = this.turns._redSubpaths || [];
     const enemySubpaths = this.turns._enemySubpaths || [];
 
-    // 地标按需呼吸：突出当前回合核心地标，弱化远方无关地名
+    // 地标按需呼吸 + 文明5城市条动态阵营归属染色（根据周边敌我部队控制力实时判定）
     const focusPlaces = !isAll && activeTurn?.focusPlaces?.length ? new Set(activeTurn.focusPlaces) : null;
+    const formations = phase.formations || [];
     this.glLandmarks.forEach(({ el, loc }) => {
       const isKey = (phase.keys || []).includes(loc.name);
       const isTurnFocus = focusPlaces ? focusPlaces.has(loc._rawName || loc.name) || focusPlaces.has(loc.name) : false;
+      let rScore = 0;
+      let bScore = 0;
+      for (const u of formations) {
+        const d = Math.hypot(loc.x - u.x, loc.y - u.y);
+        const w = Math.exp(-(d * d) / 15000);
+        if (u.side === "red") rScore += w;
+        else bScore += w;
+      }
+      const ownedRed = rScore > 0.16 && rScore > bScore + 0.05;
+      const ownedBlue = bScore > 0.16 && bScore > rScore + 0.05;
+      el.classList.toggle("owner-red", ownedRed);
+      el.classList.toggle("owner-blue", ownedBlue);
       el.classList.toggle("is-key", isKey);
       el.classList.toggle("is-turn-focus", isTurnFocus);
       el.classList.toggle("is-breathing-dim", !isAll && focusPlaces !== null && !isTurnFocus && !isKey);
@@ -2527,6 +2654,7 @@ export class MapRenderer {
     }));
     this.terrain3d.setRings(ringSpecs);
     this.terrain3d.setFrontlineUnits(phase.formations || [], theme);
+    this.sync2DCiv5Hexes();
     const shouldShowArcs = isAll || activeTurn?.actor === "clash" || activeTurnMarkers.length > 0;
     this.terrain3d.setCombatArcs(
       shouldShowArcs ? phase.formations || [] : [],
@@ -2954,22 +3082,61 @@ export class MapRenderer {
         phaseElapsed: turnElapsed
       });
 
-      // 投影贴地地标（匹配 Terrain3DEngine 世界坐标尺度）
+      // 按当前画风投影地标（文明5风居中上浮+斥力避让；经典游戏风保持原版贴地坐标）
+      const inCiv5 = this.mapStyle === "civ5";
+      const cityBoxes = [];
       for (const { el, loc } of this.glLandmarks) {
-        const p = this.terrain3d.project(loc.x, loc.y, 0.02);
-        el.style.transform = `translate3d(${p.sx.toFixed(1)}px, ${p.sy.toFixed(1)}px, 0)`;
-        el.style.zIndex = String(Math.round((1 - p.depth) * 1000));
-        el.style.visibility = p.visible ? "visible" : "hidden";
+        const p = this.terrain3d.project(loc.x, loc.y, inCiv5 ? 0.030 : 0.02);
+        cityBoxes.push({ el, p, ox: 0, oy: 0 });
+      }
+      if (inCiv5) {
+        for (let i = 0; i < cityBoxes.length; i++) {
+          const a = cityBoxes[i];
+          if (!a.p.visible) continue;
+          for (let j = i + 1; j < cityBoxes.length; j++) {
+            const b = cityBoxes[j];
+            if (!b.p.visible) continue;
+            const dx = a.p.sx + a.ox - (b.p.sx + b.ox);
+            const dy = a.p.sy + a.oy - (b.p.sy + b.oy);
+            if (Math.abs(dx) < 64 && Math.abs(dy) < 22) {
+              const pushY = (22 - Math.abs(dy)) * 0.50 * (dy >= 0 ? 1 : -1);
+              a.oy += pushY;
+              b.oy -= pushY;
+            }
+          }
+        }
+        for (const { el, p, ox, oy } of cityBoxes) {
+          el.style.transform = `translate3d(${(p.sx + ox).toFixed(1)}px, ${(p.sy + oy).toFixed(1)}px, 0) translate(-50%, -100%)`;
+          el.style.zIndex = String(Math.round((1 - p.depth) * 1000));
+          el.style.visibility = p.visible ? "visible" : "hidden";
+        }
+      } else {
+        for (const { el, p } of cityBoxes) {
+          el.style.transform = `translate3d(${p.sx.toFixed(1)}px, ${p.sy.toFixed(1)}px, 0)`;
+          el.style.zIndex = String(Math.round((1 - p.depth) * 1000));
+          el.style.visibility = p.visible ? "visible" : "hidden";
+        }
       }
 
-      // 投影战事光柱徽章并记录坐标用于兵牌避让
+      // 投影战事徽章（文明5模式下自动避让邻近城市条）
       const markerObstacles = [];
       for (const { el, marker } of this.glMarkers) {
-        const p = this.terrain3d.project(marker.x, marker.y, 0.032);
-        el.style.transform = `translate3d(${p.sx.toFixed(1)}px, ${p.sy.toFixed(1)}px, 0)`;
-        el.style.zIndex = String(Math.round((1 - p.depth) * 1000) + 140);
+        const p = this.terrain3d.project(marker.x, marker.y, inCiv5 ? 0.042 : 0.032);
+        let myOff = 0;
+        if (inCiv5) {
+          for (const cb of cityBoxes) {
+            if (!cb.p.visible) continue;
+            const dx = p.sx - (cb.p.sx + cb.ox);
+            const dy = p.sy + myOff - (cb.p.sy + cb.oy);
+            if (Math.abs(dx) < 72 && Math.abs(dy) < 28) {
+              myOff -= 28 - Math.abs(dy);
+            }
+          }
+        }
+        el.style.transform = `translate3d(${p.sx.toFixed(1)}px, ${(p.sy + myOff).toFixed(1)}px, 0)`;
+        el.style.zIndex = String(Math.round((1 - p.depth) * 1000) + 150);
         el.style.visibility = p.visible ? "visible" : "hidden";
-        if (p.visible) markerObstacles.push({ x: p.sx, y: p.sy - 20 });
+        if (p.visible) markerObstacles.push({ x: p.sx, y: p.sy + myOff - 20 });
       }
 
       // 投影贴地兵力棋子并执行斥力避让

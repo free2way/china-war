@@ -3,8 +3,8 @@
 
 import { battleRegistry, loadBattle, loadBattleEnOverlay, getBattleEntry } from "./data/battles.js?v=32";
 import { normalizeBattle } from "./engine/schema.js?v=32";
-import { MapRenderer } from "./engine/mapRenderer.js?v=33";
-import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=25";
+import { MapRenderer } from "./engine/mapRenderer.js?v=35";
+import { getLang, setLang, isEn, t, getLocalizedEntry, applyBattleOverlay } from "./engine/i18n.js?v=27";
 import { GUIDED_TOURS, resolveEventId } from "./data/eventMeta.js?v=25";
 
 const $ = (sel, root = document) => root.querySelector(sel);
